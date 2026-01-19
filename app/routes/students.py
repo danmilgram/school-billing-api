@@ -4,7 +4,9 @@ from typing import List
 
 from app.core.database import get_db
 from app.schemas.student import StudentCreate, StudentRead, StudentUpdate
+from app.schemas.account_statement import StudentAccountStatement
 from app.services.student_service import StudentService
+from app.services.account_statement_service import AccountStatementService
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -47,3 +49,12 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Student not found")
     StudentService.delete(student, db)
     return None
+
+
+@router.get("/{student_id}/account-statement", response_model=StudentAccountStatement)
+def get_student_account_statement(student_id: int, db: Session = Depends(get_db)):
+    """Get account statement for a student"""
+    statement = AccountStatementService.get_student_statement(student_id, db)
+    if not statement:
+        raise HTTPException(status_code=404, detail="Student not found")
+    return statement
