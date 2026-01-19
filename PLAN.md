@@ -128,10 +128,17 @@
 
 ---
 
-## Step 10: Authentication & Authorization (Optional)
-- [ ] Basic authentication or token-based auth
-- [ ] Protect write endpoints
-- [ ] Decide access rules for read endpoints
+## Step 10: Authentication & Authorization ✅
+- [x] JWT-based authentication (login/register endpoints)
+- [x] User model with role-based access control (ADMIN, USER)
+- [x] Password hashing with passlib
+- [x] Token generation and validation
+- [x] Protected endpoints with authentication middleware
+- [x] Role-based endpoint restrictions:
+  - Admin-only: Create/update/delete for schools, students, invoices, invoice items
+  - Regular users: Read-only access + ability to make payments
+- [x] Authentication tests (13 tests)
+- [x] Role-based access tests (7 tests)
 
 ---
 
@@ -154,19 +161,23 @@
 
 ## Step 13: Testing ✅
 - [x] Configure pytest with test database fixtures
-- [x] Unit tests (54 tests):
+- [x] Unit tests (67 tests):
   - SchoolService (7 tests)
   - StudentService (8 tests)
   - InvoiceService (11 tests) - all business rules
   - PaymentService (9 tests) - overpayment prevention
   - AccountStatementService (8 tests) - cancelled invoice exclusion
-- [x] E2E tests (42 tests):
+  - UserService (13 tests) - authentication & password management
+  - AuthenticationService (11 tests) - JWT token generation & validation
+- [x] E2E tests (62 tests):
   - Schools endpoints (10 tests)
   - Students endpoints (11 tests)
   - Invoices endpoints (14 tests) - includes nested routes
   - Payments endpoints (10 tests)
   - Account statements endpoints (8 tests)
-- [x] **Total: 96 tests passing**
+  - Authentication endpoints (13 tests) - login, register, JWT validation
+  - Role-based access (7 tests) - admin vs regular user permissions
+- [x] **Total: 129 tests passing**
 
 ---
 
@@ -197,17 +208,18 @@
 - [x] API documented and testable (via OpenAPI/Swagger)
 - [x] Business logic clearly separated (service layer)
 - [x] Code readable, structured, and maintainable
-- [x] Tests implemented (96 tests passing)
+- [x] Tests implemented (129 tests passing)
 - [x] Query optimization (SQL aggregation, no N+1)
 - [x] Pagination and filtering
 - [x] Complete documentation
+- [x] Authentication & authorization (JWT + RBAC)
 - [ ] Code quality checks with ruff
 
 ---
 
 ## Summary
 
-### ✅ Completed (Steps 0-9, 13, 15)
+### ✅ Completed (Steps 0-10, 13, 15)
 **Core functionality fully implemented:**
 - Complete CRUD for Schools, Students, Invoices, Payments
 - Service layer with business logic
@@ -217,13 +229,15 @@
 - Docker Compose setup with automatic migrations
 - All business rules implemented and tested
 - Pagination and filtering on list endpoints
-- **96 comprehensive tests (54 unit + 42 E2E)**
+- **JWT-based authentication with role-based access control**
+- **129 comprehensive tests (67 unit + 62 E2E)**
 - Production-ready documentation
 
 ### 🔧 Key Technical Achievements
 - **Query Optimization**: SQL aggregation (SUM + JOIN) for account statements
 - **Business Rules**: Invoice total auto-calculation, overpayment prevention, status management
-- **Testing**: 96 tests covering all critical paths and business logic
+- **Security**: JWT authentication, password hashing, role-based endpoint protection
+- **Testing**: 129 tests covering all critical paths, business logic, auth flows, and RBAC
 - **API Design**: RESTful with proper pagination, filtering, and nested resources
 - **Documentation**: Architecture-first README with practical examples
 
@@ -231,6 +245,5 @@
 - **Step 12**: Basic health check only, missing structured logging/metrics
 
 ### ❌ Optional/Nice-to-have
-- **Step 10**: Authentication & Authorization
 - **Step 11**: Caching & Performance (Redis)
 - **Step 14**: Code Quality (ruff linting and formatting)
