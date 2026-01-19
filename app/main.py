@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.routes import schools, students, invoices
+from app.routes import schools, students, invoices, auth
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -8,6 +8,7 @@ app = FastAPI(
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(schools.router, prefix="/api/v1")
 app.include_router(students.router, prefix="/api/v1")
 app.include_router(invoices.router, prefix="/api/v1")

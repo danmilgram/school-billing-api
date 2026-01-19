@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     PROJECT_NAME: str = "School Billing API"
+    SECRET_KEY: str
 
     class Config:
         env_file = ".env"
