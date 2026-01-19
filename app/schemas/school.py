@@ -13,8 +13,10 @@ class SchoolCreate(SchoolBase):
     pass
 
 
-class SchoolUpdate(SchoolBase):
-    pass
+class SchoolUpdate(BaseModel):
+    name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
 
 
 class SchoolRead(SchoolBase):
