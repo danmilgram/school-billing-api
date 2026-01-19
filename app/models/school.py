@@ -15,6 +15,7 @@ class School(Base):
     contact_phone = Column(String(50))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     students = relationship("Student", back_populates="school", cascade="all, delete-orphan")

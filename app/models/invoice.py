@@ -24,6 +24,7 @@ class Invoice(Base):
     status = Column(SQLEnum(InvoiceStatus), default=InvoiceStatus.PENDING, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     student = relationship("Student", back_populates="invoices")

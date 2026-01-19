@@ -24,6 +24,7 @@ class Student(Base):
     status = Column(SQLEnum(StudentStatus), default=StudentStatus.ACTIVE, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     school = relationship("School", back_populates="students")

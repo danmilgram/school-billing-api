@@ -15,6 +15,7 @@ class InvoiceItem(Base):
     unit_price = Column(Numeric(10, 2), nullable=False)
     total_amount = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     invoice = relationship("Invoice", back_populates="items")
