@@ -8,9 +8,11 @@ from app.schemas.school import SchoolCreate, SchoolUpdate
 class SchoolService:
 
     @staticmethod
-    def get_all(db: Session):
-        """Get all schools excluding soft-deleted"""
-        return db.query(School).filter(School.deleted_at.is_(None)).all()
+    def get_all(db: Session, skip: int = 0, limit: int = 100):
+        """Get all schools excluding soft-deleted with pagination"""
+        return db.query(School).filter(
+            School.deleted_at.is_(None)
+        ).offset(skip).limit(limit).all()
 
     @staticmethod
     def get_by_id(school_id: int, db: Session):

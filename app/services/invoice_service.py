@@ -27,9 +27,14 @@ class InvoiceService:
         return invoice
 
     @staticmethod
-    def get_all(db: Session):
-        """Get all invoices excluding soft-deleted"""
-        return db.query(Invoice).filter(Invoice.deleted_at.is_(None)).all()
+    def get_all(db: Session, skip: int = 0, limit: int = 100, status: str = None):
+        """Get all invoices excluding soft-deleted with pagination and optional status filter"""
+        query = db.query(Invoice).filter(Invoice.deleted_at.is_(None))
+
+        if status:
+            query = query.filter(Invoice.status == status)
+
+        return query.offset(skip).limit(limit).all()
 
     @staticmethod
     def get_by_id(invoice_id: int, db: Session):

@@ -8,9 +8,11 @@ from app.schemas.student import StudentCreate, StudentUpdate
 class StudentService:
 
     @staticmethod
-    def get_all(db: Session):
-        """Get all students excluding soft-deleted"""
-        return db.query(Student).filter(Student.deleted_at.is_(None)).all()
+    def get_all(db: Session, skip: int = 0, limit: int = 100):
+        """Get all students excluding soft-deleted with pagination"""
+        return db.query(Student).filter(
+            Student.deleted_at.is_(None)
+        ).offset(skip).limit(limit).all()
 
     @staticmethod
     def get_by_id(student_id: int, db: Session):

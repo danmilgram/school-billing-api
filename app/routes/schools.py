@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -18,9 +18,13 @@ def create_school(school: SchoolCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[SchoolRead])
-def list_schools(db: Session = Depends(get_db)):
-    """List all schools (excluding soft-deleted)"""
-    return SchoolService.get_all(db)
+def list_schools(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Max number of records to return"),
+    db: Session = Depends(get_db)
+):
+    """List all schools (excluding soft-deleted) with pagination"""
+    return SchoolService.get_all(db, skip=skip, limit=limit)
 
 
 @router.get("/{school_id}", response_model=SchoolRead)

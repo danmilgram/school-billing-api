@@ -12,7 +12,11 @@ class AccountStatementService:
 
     @staticmethod
     def get_student_statement(student_id: int, db: Session):
-        """Get account statement for a student"""
+        """Get account statement for a student
+
+        Optimized with SQL aggregation to avoid N+1 queries.
+        Uses SUM() with JOIN to calculate totals in a single query.
+        """
         student = db.query(Student).filter(
             Student.id == student_id,
             Student.deleted_at.is_(None)
@@ -30,19 +34,32 @@ class AccountStatementService:
             Invoice.status != 'cancelled'
         ).all()
 
-        total_invoiced = Decimal('0')
-        total_paid = Decimal('0')
+        # Use SQL aggregation to calculate totals efficiently
+        # SUM(invoice.total_amount) for total_invoiced
+        total_invoiced_result = db.query(
+            func.coalesce(func.sum(Invoice.total_amount), 0)
+        ).filter(
+            Invoice.student_id == student_id,
+            Invoice.deleted_at.is_(None),
+            Invoice.status != 'cancelled'
+        ).scalar()
 
-        for invoice in invoices:
-            total_invoiced += invoice.total_amount
+        total_invoiced = Decimal(str(total_invoiced_result))
 
-            # Calculate paid amount for this invoice
-            payments = db.query(Payment).filter(
-                Payment.invoice_id == invoice.id,
-                Payment.deleted_at.is_(None)
-            ).all()
-            total_paid += sum(p.amount for p in payments)
+        # SUM(payment.amount) for total_paid
+        # Join payments with invoices to ensure we only sum payments for non-cancelled invoices
+        total_paid_result = db.query(
+            func.coalesce(func.sum(Payment.amount), 0)
+        ).join(
+            Invoice, Payment.invoice_id == Invoice.id
+        ).filter(
+            Invoice.student_id == student_id,
+            Invoice.deleted_at.is_(None),
+            Invoice.status != 'cancelled',
+            Payment.deleted_at.is_(None)
+        ).scalar()
 
+        total_paid = Decimal(str(total_paid_result))
         total_pending = total_invoiced - total_paid
 
         return {
@@ -58,7 +75,11 @@ class AccountStatementService:
 
     @staticmethod
     def get_school_statement(school_id: int, db: Session):
-        """Get account statement for a school"""
+        """Get account statement for a school
+
+        Optimized with SQL aggregation to avoid N+1 queries.
+        Uses SUM() with JOIN to calculate totals in a single query across all students.
+        """
         school = db.query(School).filter(
             School.id == school_id,
             School.deleted_at.is_(None)
@@ -73,33 +94,49 @@ class AccountStatementService:
             Student.deleted_at.is_(None)
         ).count()
 
-        # Get all student IDs for this school
-        student_ids = db.query(Student.id).filter(
-            Student.school_id == school_id,
-            Student.deleted_at.is_(None)
-        ).all()
-        student_ids = [s[0] for s in student_ids]
-
         # Get all invoices for school's students (excluding cancelled and deleted)
-        invoices = db.query(Invoice).filter(
-            Invoice.student_id.in_(student_ids),
+        # Join with Student to filter by school_id
+        invoices = db.query(Invoice).join(
+            Student, Invoice.student_id == Student.id
+        ).filter(
+            Student.school_id == school_id,
+            Student.deleted_at.is_(None),
             Invoice.deleted_at.is_(None),
             Invoice.status != 'cancelled'
         ).all()
 
-        total_invoiced = Decimal('0')
-        total_paid = Decimal('0')
+        # Use SQL aggregation to calculate totals efficiently
+        # SUM(invoice.total_amount) for total_invoiced
+        total_invoiced_result = db.query(
+            func.coalesce(func.sum(Invoice.total_amount), 0)
+        ).join(
+            Student, Invoice.student_id == Student.id
+        ).filter(
+            Student.school_id == school_id,
+            Student.deleted_at.is_(None),
+            Invoice.deleted_at.is_(None),
+            Invoice.status != 'cancelled'
+        ).scalar()
 
-        for invoice in invoices:
-            total_invoiced += invoice.total_amount
+        total_invoiced = Decimal(str(total_invoiced_result))
 
-            # Calculate paid amount for this invoice
-            payments = db.query(Payment).filter(
-                Payment.invoice_id == invoice.id,
-                Payment.deleted_at.is_(None)
-            ).all()
-            total_paid += sum(p.amount for p in payments)
+        # SUM(payment.amount) for total_paid
+        # Join payments -> invoices -> students to filter by school
+        total_paid_result = db.query(
+            func.coalesce(func.sum(Payment.amount), 0)
+        ).join(
+            Invoice, Payment.invoice_id == Invoice.id
+        ).join(
+            Student, Invoice.student_id == Student.id
+        ).filter(
+            Student.school_id == school_id,
+            Student.deleted_at.is_(None),
+            Invoice.deleted_at.is_(None),
+            Invoice.status != 'cancelled',
+            Payment.deleted_at.is_(None)
+        ).scalar()
 
+        total_paid = Decimal(str(total_paid_result))
         total_pending = total_invoiced - total_paid
 
         return {
