@@ -15,6 +15,7 @@ class StudentStatus(str, enum.Enum):
 class Student(Base):
     __tablename__ = "students"
 
+    # TODO: Add address fields (not part of the core requirements)
     id = Column(Integer, primary_key=True, autoincrement=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     first_name = Column(String(255), nullable=False)
