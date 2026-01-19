@@ -20,8 +20,9 @@ class Student(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
-    email = Column(String(255))
-    enrollment_date = Column(Date)
+    # TODO: this is like a contact email, for a real model we might want to separate student and guardian(parents) contacts
+    email = Column(String(255), nullable=False)
+    enrollment_date = Column(Date, nullable=False)
     status = Column(SQLEnum(StudentStatus), default=StudentStatus.ACTIVE, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
