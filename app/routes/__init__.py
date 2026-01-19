@@ -1,3 +1,3 @@
-from app.routes import schools, students
+from app.routes import schools, students, invoices
 
-__all__ = ["schools", "students"]
+__all__ = ["schools", "students", "invoices"]
