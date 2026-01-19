@@ -291,3 +291,4 @@ def test_update_nonexistent_item(client):
     })
 
     assert response.status_code == 404
+

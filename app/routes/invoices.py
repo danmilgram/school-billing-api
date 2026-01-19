@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_admin
 from app.models.user import User
 from app.schemas.invoice import InvoiceCreate, InvoiceRead, InvoiceUpdate, InvoiceItemCreate, InvoiceItemRead
 from app.schemas.payment import PaymentCreate, PaymentRead
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/invoices", tags=["invoices"])
 def create_invoice(
     invoice: InvoiceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Create a new invoice with items (requires authentication)"""
+    """Create a new invoice with items (requires admin role)"""
     return InvoiceService.create(invoice, db)
 
 
@@ -53,9 +53,9 @@ def update_invoice(
     invoice_id: int,
     invoice_update: InvoiceUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Update an invoice (requires authentication)"""
+    """Update an invoice (requires admin role)"""
     invoice = InvoiceService.get_by_id(invoice_id, db)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -66,9 +66,9 @@ def update_invoice(
 def cancel_invoice(
     invoice_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Cancel an invoice (business action, not deletion) (requires authentication)"""
+    """Cancel an invoice (business action, not deletion) (requires admin role)"""
     invoice = InvoiceService.get_by_id(invoice_id, db)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -82,9 +82,9 @@ def add_invoice_item(
     invoice_id: int,
     item: InvoiceItemCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Add item to invoice (recalculates total) (requires authentication)"""
+    """Add item to invoice (recalculates total) (requires admin role)"""
     invoice = InvoiceService.get_by_id(invoice_id, db)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -97,9 +97,9 @@ def update_invoice_item(
     item_id: int,
     item: InvoiceItemCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Update invoice item (recalculates total) (requires authentication)"""
+    """Update invoice item (recalculates total) (requires admin role)"""
     invoice = InvoiceService.get_by_id(invoice_id, db)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -116,9 +116,9 @@ def delete_invoice_item(
     invoice_id: int,
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Soft delete invoice item (recalculates total, cannot delete last item) (requires authentication)"""
+    """Soft delete invoice item (recalculates total, cannot delete last item) (requires admin role)"""
     invoice = InvoiceService.get_by_id(invoice_id, db)
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")

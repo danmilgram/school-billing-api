@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_admin
 from app.models.user import User
 from app.schemas.school import SchoolCreate, SchoolRead, SchoolUpdate
 from app.schemas.account_statement import SchoolAccountStatement
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/schools", tags=["schools"])
 def create_school(
     school: SchoolCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Create a new school (requires authentication)"""
+    """Create a new school (requires admin role)"""
     return SchoolService.create(school, db)
 
 
@@ -52,9 +52,9 @@ def update_school(
     school_id: int,
     school_update: SchoolUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Update a school (requires authentication)"""
+    """Update a school (requires admin role)"""
     school = SchoolService.get_by_id(school_id, db)
     if not school:
         raise HTTPException(status_code=404, detail="School not found")
@@ -65,9 +65,9 @@ def update_school(
 def delete_school(
     school_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Soft delete a school (requires authentication)"""
+    """Soft delete a school (requires admin role)"""
     school = SchoolService.get_by_id(school_id, db)
     if not school:
         raise HTTPException(status_code=404, detail="School not found")
@@ -79,9 +79,9 @@ def delete_school(
 def get_school_account_statement(
     school_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Get account statement for a school (requires authentication)"""
+    """Get account statement for a school (requires admin role)"""
     statement = AccountStatementService.get_school_statement(school_id, db)
     if not statement:
         raise HTTPException(status_code=404, detail="School not found")

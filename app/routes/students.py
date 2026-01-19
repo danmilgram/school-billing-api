@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, require_admin
 from app.models.user import User
 from app.schemas.student import StudentCreate, StudentRead, StudentUpdate
 from app.schemas.account_statement import StudentAccountStatement
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/students", tags=["students"])
 def create_student(
     student: StudentCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Create a new student (requires authentication)"""
+    """Create a new student (requires admin role)"""
     return StudentService.create(student, db)
 
 
@@ -52,9 +52,9 @@ def update_student(
     student_id: int,
     student_update: StudentUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Update a student (requires authentication)"""
+    """Update a student (requires admin role)"""
     student = StudentService.get_by_id(student_id, db)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -65,9 +65,9 @@ def update_student(
 def delete_student(
     student_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Soft delete a student (requires authentication)"""
+    """Soft delete a student (requires admin role)"""
     student = StudentService.get_by_id(student_id, db)
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -79,9 +79,9 @@ def delete_student(
 def get_student_account_statement(
     student_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin)
 ):
-    """Get account statement for a student (requires authentication)"""
+    """Get account statement for a student (requires admin role)"""
     statement = AccountStatementService.get_student_statement(student_id, db)
     if not statement:
         raise HTTPException(status_code=404, detail="Student not found")

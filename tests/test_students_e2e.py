@@ -264,3 +264,4 @@ def test_delete_nonexistent_student(client):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Student not found"
+
