@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.schemas.invoice import InvoiceCreate, InvoiceRead, InvoiceUpdate, InvoiceItemCreate, InvoiceItemRead
@@ -18,9 +18,14 @@ def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[InvoiceRead])
-def list_invoices(db: Session = Depends(get_db)):
-    """List all invoices (excluding soft-deleted)"""
-    return InvoiceService.get_all(db)
+def list_invoices(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Max number of records to return"),
+    status: Optional[str] = Query(None, description="Filter by invoice status (pending, paid, cancelled)"),
+    db: Session = Depends(get_db)
+):
+    """List all invoices (excluding soft-deleted) with pagination and optional status filter"""
+    return InvoiceService.get_all(db, skip=skip, limit=limit, status=status)
 
 
 @router.get("/{invoice_id}", response_model=InvoiceRead)
