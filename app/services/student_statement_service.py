@@ -83,7 +83,7 @@ class StudentStatementService:
             .scalar()
         )
 
-        total_invoiced = Decimal(str(total_invoiced_result))
+        total_invoiced: Decimal = total_invoiced_result or Decimal("0")
 
         # SUM(payment.amount) for total_paid with date filters on invoice issue_date
         total_paid_result = (
@@ -93,8 +93,8 @@ class StudentStatementService:
             .scalar()
         )
 
-        total_paid = Decimal(str(total_paid_result))
-        total_pending = total_invoiced - total_paid
+        total_paid: Decimal = total_paid_result or Decimal("0")
+        total_pending: Decimal = total_invoiced - total_paid
 
         return total_invoiced, total_paid, total_pending
 
@@ -134,7 +134,7 @@ class StudentStatementService:
 
         # Build a dictionary for O(1) lookup
         payment_totals = {
-            invoice_id: Decimal(str(paid)) for invoice_id, paid in payment_results
+            invoice_id: paid or Decimal("0") for invoice_id, paid in payment_results
         }
 
         # Now build invoice items with O(1) lookup per invoice
