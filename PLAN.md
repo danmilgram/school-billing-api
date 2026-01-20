@@ -1,11 +1,5 @@
 # School Billing API – Execution Plan
 
-  ## Code Quality
-- [ ] Add `ruff`
-- [ ] Configure linting rules
-- [ ] Format entire codebase
-- [ ] (Optional) pre-commit hooks
-
 ## Caching & Performance
 - [ ] Add Redis service
 - [ ] Cache read-heavy endpoints:

@@ -55,6 +55,21 @@ class StudentStatementService:
 
         return student, school
 
+    def _student_invoice_base_filters(self):
+        """
+        Return common filter conditions for student invoice queries
+
+        Returns:
+            List of filter conditions that can be unpacked into .filter()
+        """
+        return [
+            Invoice.student_id == self.student_id,
+            Invoice.deleted_at.is_(None),
+            Invoice.status != "cancelled",
+            Invoice.issue_date >= self.start_date,
+            Invoice.issue_date <= self.end_date,
+        ]
+
     def _calculate_totals(self) -> tuple[Decimal, Decimal, Decimal]:
         """Aggregate totals for student invoices (pure aggregation logic)
 
@@ -64,13 +79,7 @@ class StudentStatementService:
         # SUM(invoice.total_amount) for total_invoiced
         total_invoiced_result = (
             self.db.query(func.coalesce(func.sum(Invoice.total_amount), 0))
-            .filter(
-                Invoice.student_id == self.student_id,
-                Invoice.deleted_at.is_(None),
-                Invoice.status != "cancelled",
-                Invoice.issue_date >= self.start_date,
-                Invoice.issue_date <= self.end_date,
-            )
+            .filter(*self._student_invoice_base_filters())
             .scalar()
         )
 
@@ -80,14 +89,7 @@ class StudentStatementService:
         total_paid_result = (
             self.db.query(func.coalesce(func.sum(Payment.amount), 0))
             .join(Invoice, Payment.invoice_id == Invoice.id)
-            .filter(
-                Invoice.student_id == self.student_id,
-                Invoice.deleted_at.is_(None),
-                Invoice.status != "cancelled",
-                Payment.deleted_at.is_(None),
-                Invoice.issue_date >= self.start_date,
-                Invoice.issue_date <= self.end_date,
-            )
+            .filter(*self._student_invoice_base_filters(), Payment.deleted_at.is_(None))
             .scalar()
         )
 
@@ -110,13 +112,7 @@ class StudentStatementService:
         # Query for invoices with date filters
         invoices = (
             self.db.query(Invoice)
-            .filter(
-                Invoice.student_id == self.student_id,
-                Invoice.deleted_at.is_(None),
-                Invoice.status != "cancelled",
-                Invoice.issue_date >= self.start_date,
-                Invoice.issue_date <= self.end_date,
-            )
+            .filter(*self._student_invoice_base_filters())
             .all()
         )
 
