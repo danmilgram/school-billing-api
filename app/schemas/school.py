@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
 
 
 class SchoolBase(BaseModel):
     name: str
-    contact_email: str
+    contact_email: EmailStr
     contact_phone: str
 
 
@@ -15,7 +15,7 @@ class SchoolCreate(SchoolBase):
 
 class SchoolUpdate(BaseModel):
     name: Optional[str] = None
-    contact_email: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
     contact_phone: Optional[str] = None
 
 

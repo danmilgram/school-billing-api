@@ -3,15 +3,7 @@
 # Double check
 - Core bussiness rules
 - Validations
-- Code structure
 - Tests
-- Answer
-  ● ¿Cuánto le debe un estudiante a un colegio?
-  ● ¿Cuánto le deben todos los estudiantes a un colegio?
-  ● ¿Cuántos alumnos tiene un colegio?
-  ● ¿Cuál es el estado de cuenta de un colegio o de un
-  estudiante?
-- Modularization!!
 
   ## Code Quality
 - [ ] Add `ruff`
