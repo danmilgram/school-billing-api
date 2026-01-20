@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from decimal import Decimal
 
@@ -8,6 +9,8 @@ from app.models.invoice import Invoice
 from app.models.payment import Payment
 from app.models.school import School
 from app.models.student import Student
+
+logger = logging.getLogger(__name__)
 
 
 class StudentStatementService:
@@ -165,9 +168,16 @@ class StudentStatementService:
         Returns:
             Statement dict or None if student not found
         """
+        logger.info(
+            f"Generating student statement: student_id={self.student_id}, "
+            f"period={self.start_date} to {self.end_date}, "
+            f"include_invoices={self.include_invoices}"
+        )
+
         # Validation / existence check
         result = self._get_student_and_school()
         if not result:
+            logger.warning(f"Student not found: student_id={self.student_id}")
             return None
 
         student, school = result
@@ -179,6 +189,13 @@ class StudentStatementService:
         invoice_items = None
         if self.include_invoices:
             invoice_items = self._build_invoice_rows()
+
+        logger.info(
+            f"Student statement generated: student_id={student.id}, "
+            f"school_id={school.id}, "
+            f"total_invoiced={total_invoiced}, "
+            f"total_paid={total_paid}, total_pending={total_pending}"
+        )
 
         # Build and return statement
         return {

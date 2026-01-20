@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -6,6 +7,8 @@ from sqlalchemy.orm import Session
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.schemas.invoice import InvoiceCreate, InvoiceItemCreate, InvoiceUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class InvoiceService:
@@ -54,6 +57,11 @@ class InvoiceService:
     @staticmethod
     def create(invoice_in: InvoiceCreate, db: Session):
         """Create a new invoice with items"""
+        logger.info(
+            f"Creating invoice for student_id={invoice_in.student_id} "
+            f"with {len(invoice_in.items)} items"
+        )
+
         # Calculate total from items
         total_amount = Decimal("0")
         for item in invoice_in.items:
@@ -81,6 +89,11 @@ class InvoiceService:
 
         db.commit()
         db.refresh(invoice)
+
+        logger.info(
+            f"Invoice created: invoice_id={invoice.id}, "
+            f"total_amount={invoice.total_amount}, status={invoice.status.value}"
+        )
         return invoice
 
     @staticmethod
@@ -97,14 +110,29 @@ class InvoiceService:
         """Cancel an invoice (business action)"""
         from app.models.invoice import InvoiceStatus
 
+        logger.info(
+            f"Cancelling invoice: invoice_id={invoice.id}, "
+            f"student_id={invoice.student_id}, "
+            f"previous_status={invoice.status.value}, "
+            f"total_amount={invoice.total_amount}"
+        )
+
         invoice.status = InvoiceStatus.CANCELLED
         db.commit()
         db.refresh(invoice)
+
+        logger.info(f"Invoice cancelled successfully: invoice_id={invoice.id}")
         return invoice
 
     @staticmethod
     def add_item(invoice: Invoice, item_in: InvoiceItemCreate, db: Session):
         """Add item to invoice and recalculate total"""
+        logger.info(
+            f"Adding item to invoice: invoice_id={invoice.id}, "
+            f"description='{item_in.description}', quantity={item_in.quantity}, "
+            f"unit_price={item_in.unit_price}"
+        )
+
         item_total = Decimal(str(item_in.quantity)) * item_in.unit_price
         invoice_item = InvoiceItem(
             invoice_id=invoice.id,
@@ -119,6 +147,10 @@ class InvoiceService:
 
         # Recalculate invoice total
         InvoiceService.recalculate_total(invoice, db)
+
+        logger.info(
+            f"Item added to invoice: invoice_id={invoice.id}, item_id={invoice_item.id}"
+        )
         return invoice_item
 
     @staticmethod

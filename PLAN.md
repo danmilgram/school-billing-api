@@ -1,12 +1,5 @@
 # School Billing API – Execution Plan
 
-## Caching & Performance
-- [ ] Add Redis service
-- [ ] Cache read-heavy endpoints:
-  - School account statement
-  - Student account statement
-- [ ] Invalidate cache on invoice/payment changes
-
 ## Observability
 - [ ] Add loggs
 - [ ] Prometheus basic metrics
