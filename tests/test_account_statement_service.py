@@ -1,7 +1,8 @@
 import pytest
 from datetime import date
 from decimal import Decimal
-from app.services.account_statement_service import AccountStatementService
+from app.services.student_statement_service import StudentStatementService
+from app.services.school_statement_service import SchoolStatementService
 from app.services.school_service import SchoolService
 from app.services.student_service import StudentService
 from app.services.invoice_service import InvoiceService
@@ -53,7 +54,7 @@ def test_student_statement_basic(db):
         db
     )
 
-    statement = AccountStatementService.get_student_statement(
+    statement = StudentStatementService.get_statement(
         student.id, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
@@ -104,7 +105,7 @@ def test_student_statement_multiple_invoices(db):
     PaymentService.create(invoice1, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("1000.00"), payment_method="cash"), db)
     PaymentService.create(invoice2, PaymentCreate(payment_date=date(2024, 2, 5), amount=Decimal("200.00"), payment_method="cash"), db)
 
-    statement = AccountStatementService.get_student_statement(
+    statement = StudentStatementService.get_statement(
         student.id, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
@@ -144,7 +145,7 @@ def test_student_statement_excludes_cancelled_invoices(db):
     # Cancel the first invoice
     InvoiceService.cancel(invoice1, db)
 
-    statement = AccountStatementService.get_student_statement(
+    statement = StudentStatementService.get_statement(
         student.id, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
@@ -160,7 +161,7 @@ def test_student_statement_excludes_cancelled_invoices(db):
 
 def test_student_statement_nonexistent_student(db):
     """Test student statement for non-existent student"""
-    statement = AccountStatementService.get_student_statement(
+    statement = StudentStatementService.get_statement(
         999, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31)
@@ -185,7 +186,7 @@ def test_school_statement_basic(db):
     )
     PaymentService.create(invoice, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("400.00"), payment_method="cash"), db)
 
-    statement = AccountStatementService.get_school_statement(
+    statement = SchoolStatementService.get_statement(
         school.id, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
@@ -247,7 +248,7 @@ def test_school_statement_multiple_students(db):
     PaymentService.create(invoice1, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("500.00"), payment_method="cash"), db)
     PaymentService.create(invoice2, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("1200.00"), payment_method="cash"), db)
 
-    statement = AccountStatementService.get_school_statement(
+    statement = SchoolStatementService.get_statement(
         school.id, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
@@ -287,7 +288,7 @@ def test_school_statement_excludes_cancelled_invoices(db):
     # Cancel the first invoice
     InvoiceService.cancel(invoice1, db)
 
-    statement = AccountStatementService.get_school_statement(
+    statement = SchoolStatementService.get_statement(
         school.id, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
@@ -301,7 +302,7 @@ def test_school_statement_excludes_cancelled_invoices(db):
 
 def test_school_statement_nonexistent_school(db):
     """Test school statement for non-existent school"""
-    statement = AccountStatementService.get_school_statement(
+    statement = SchoolStatementService.get_statement(
         999, db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31)

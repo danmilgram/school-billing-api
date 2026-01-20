@@ -9,7 +9,7 @@ from app.models.user import User
 from app.schemas.student import StudentCreate, StudentRead, StudentUpdate
 from app.schemas.account_statement import StudentAccountStatement
 from app.services.student_service import StudentService
-from app.services.account_statement_service import AccountStatementService
+from app.services.student_statement_service import StudentStatementService
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -92,7 +92,7 @@ def get_student_account_statement(
     - end_date (required): Filter for invoices issued on or before this date (format: YYYY-MM-DD)
     - include_invoices (optional, default: false): Include the list of invoices in the response
     """
-    statement = AccountStatementService.get_student_statement(
+    statement = StudentStatementService.get_statement(
         student_id, db, start_date=start_date, end_date=end_date, include_invoices=include_invoices
     )
     if not statement:

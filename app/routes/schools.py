@@ -9,7 +9,7 @@ from app.models.user import User
 from app.schemas.school import SchoolCreate, SchoolRead, SchoolUpdate
 from app.schemas.account_statement import SchoolAccountStatement
 from app.services.school_service import SchoolService
-from app.services.account_statement_service import AccountStatementService
+from app.services.school_statement_service import SchoolStatementService
 
 router = APIRouter(prefix="/schools", tags=["schools"])
 
@@ -92,7 +92,7 @@ def get_school_account_statement(
     - end_date (required): Filter for invoices issued on or before this date (format: YYYY-MM-DD)
     - include_invoices (optional, default: false): Include the list of invoices in the response
     """
-    statement = AccountStatementService.get_school_statement(
+    statement = SchoolStatementService.get_statement(
         school_id, db, start_date=start_date, end_date=end_date, include_invoices=include_invoices
     )
     if not statement:
