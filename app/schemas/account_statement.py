@@ -2,18 +2,6 @@ from pydantic import BaseModel, ConfigDict
 from decimal import Decimal
 from typing import List
 from datetime import date
-from app.schemas.invoice import InvoiceRead
-
-
-class StudentAccountStatement(BaseModel):
-    student_id: int
-    student_name: str
-    school_id: int
-    school_name: str
-    total_invoiced: Decimal
-    total_paid: Decimal
-    total_pending: Decimal
-    invoices: List[InvoiceRead]
 
 
 class PeriodSchema(BaseModel):
@@ -27,7 +15,31 @@ class SummarySchema(BaseModel):
     total_pending: Decimal
 
 
+class StatementInvoice(BaseModel):
+    """Simplified invoice for statement views - no items, no nested details"""
+    invoice_id: int
+    issue_date: date
+    due_date: date
+    status: str
+    total_amount: Decimal
+    paid_amount: Decimal
+    pending_amount: Decimal
+
+
+class StudentAccountStatement(BaseModel):
+    model_config = ConfigDict(exclude_none=True)
+
+    student_id: int
+    student_name: str
+    school_id: int
+    school_name: str
+    period: PeriodSchema
+    summary: SummarySchema
+    invoices: List[StatementInvoice] | None = None
+
+
 class InvoiceStatementItem(BaseModel):
+    """Invoice item for school statements - includes student_id"""
     invoice_id: int
     student_id: int
     issue_date: date

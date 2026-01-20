@@ -53,17 +53,27 @@ def test_student_statement_basic(db):
         db
     )
 
-    statement = AccountStatementService.get_student_statement(student.id, db)
+    statement = AccountStatementService.get_student_statement(
+        student.id, db,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 12, 31),
+        include_invoices=True
+    )
 
     assert statement is not None
     assert statement["student_id"] == student.id
     assert statement["student_name"] == "John Doe"
     assert statement["school_id"] == school.id
     assert statement["school_name"] == "Test School"
-    assert statement["total_invoiced"] == Decimal("1000.00")
-    assert statement["total_paid"] == Decimal("600.00")
-    assert statement["total_pending"] == Decimal("400.00")
+    assert statement["period"]["start_date"] == date(2024, 1, 1)
+    assert statement["period"]["end_date"] == date(2024, 12, 31)
+    assert statement["summary"]["total_invoiced"] == Decimal("1000.00")
+    assert statement["summary"]["total_paid"] == Decimal("600.00")
+    assert statement["summary"]["total_pending"] == Decimal("400.00")
     assert len(statement["invoices"]) == 1
+    assert statement["invoices"][0]["invoice_id"] == invoice.id
+    assert statement["invoices"][0]["paid_amount"] == Decimal("600.00")
+    assert statement["invoices"][0]["pending_amount"] == Decimal("400.00")
 
 
 def test_student_statement_multiple_invoices(db):
@@ -94,11 +104,16 @@ def test_student_statement_multiple_invoices(db):
     PaymentService.create(invoice1, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("1000.00"), payment_method="cash"), db)
     PaymentService.create(invoice2, PaymentCreate(payment_date=date(2024, 2, 5), amount=Decimal("200.00"), payment_method="cash"), db)
 
-    statement = AccountStatementService.get_student_statement(student.id, db)
+    statement = AccountStatementService.get_student_statement(
+        student.id, db,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 12, 31),
+        include_invoices=True
+    )
 
-    assert statement["total_invoiced"] == Decimal("1500.00")
-    assert statement["total_paid"] == Decimal("1200.00")
-    assert statement["total_pending"] == Decimal("300.00")
+    assert statement["summary"]["total_invoiced"] == Decimal("1500.00")
+    assert statement["summary"]["total_paid"] == Decimal("1200.00")
+    assert statement["summary"]["total_pending"] == Decimal("300.00")
     assert len(statement["invoices"]) == 2
 
 
@@ -129,18 +144,27 @@ def test_student_statement_excludes_cancelled_invoices(db):
     # Cancel the first invoice
     InvoiceService.cancel(invoice1, db)
 
-    statement = AccountStatementService.get_student_statement(student.id, db)
+    statement = AccountStatementService.get_student_statement(
+        student.id, db,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 12, 31),
+        include_invoices=True
+    )
 
     # Should only include invoice2
-    assert statement["total_invoiced"] == Decimal("500.00")
-    assert statement["total_paid"] == Decimal("0.00")
-    assert statement["total_pending"] == Decimal("500.00")
+    assert statement["summary"]["total_invoiced"] == Decimal("500.00")
+    assert statement["summary"]["total_paid"] == Decimal("0.00")
+    assert statement["summary"]["total_pending"] == Decimal("500.00")
     assert len(statement["invoices"]) == 1
 
 
 def test_student_statement_nonexistent_student(db):
     """Test student statement for non-existent student"""
-    statement = AccountStatementService.get_student_statement(999, db)
+    statement = AccountStatementService.get_student_statement(
+        999, db,
+        start_date=date(2024, 1, 1),
+        end_date=date(2024, 12, 31)
+    )
 
     assert statement is None
 

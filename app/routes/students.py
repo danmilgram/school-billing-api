@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import date
 
 from app.core.database import get_db
 from app.core.auth import get_current_user, require_admin
@@ -75,14 +76,25 @@ def delete_student(
     return None
 
 
-@router.get("/{student_id}/account-statement", response_model=StudentAccountStatement)
+@router.get("/{student_id}/account-statement", response_model=StudentAccountStatement, response_model_exclude_none=True)
 def get_student_account_statement(
     student_id: int,
+    start_date: date = Query(..., description="Filter invoices issued on or after this date (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="Filter invoices issued on or before this date (YYYY-MM-DD)"),
+    include_invoices: bool = Query(False, description="Whether to include the list of invoices in the response"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin)
 ):
-    """Get account statement for a student (requires admin role)"""
-    statement = AccountStatementService.get_student_statement(student_id, db)
+    """Get account statement for a student with date range filtering (requires admin role)
+
+    Query parameters:
+    - start_date (required): Filter for invoices issued on or after this date (format: YYYY-MM-DD)
+    - end_date (required): Filter for invoices issued on or before this date (format: YYYY-MM-DD)
+    - include_invoices (optional, default: false): Include the list of invoices in the response
+    """
+    statement = AccountStatementService.get_student_statement(
+        student_id, db, start_date=start_date, end_date=end_date, include_invoices=include_invoices
+    )
     if not statement:
         raise HTTPException(status_code=404, detail="Student not found")
     return statement
