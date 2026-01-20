@@ -12,59 +12,80 @@ from app.models.payment import Payment
 class StudentStatementService:
     """Service for generating student account statements"""
 
-    @staticmethod
-    def _get_student_and_school(
-        db: Session, student_id: int
-    ) -> tuple[Student | None, School | None]:
-        """Fetch student and their school (validation + existence check)"""
-        student = db.query(Student).filter(
-            Student.id == student_id,
+    def __init__(
+        self,
+        student_id: int,
+        db: Session,
+        start_date: date,
+        end_date: date,
+        include_invoices: bool = False
+    ):
+        """Initialize the service with request parameters
+
+        Args:
+            student_id: The student ID
+            db: Database session
+            start_date: Filter for invoices issued on or after this date
+            end_date: Filter for invoices issued on or before this date
+            include_invoices: Whether to include the list of invoices (default: False)
+        """
+        self.student_id = student_id
+        self.db = db
+        self.start_date = start_date
+        self.end_date = end_date
+        self.include_invoices = include_invoices
+
+    def _get_student_and_school(self) -> tuple[Student, School] | None:
+        """Fetch student and their school (validation + existence check)
+
+        Returns:
+            Tuple of (student, school) if student exists, None otherwise
+        """
+        student = self.db.query(Student).filter(
+            Student.id == self.student_id,
             Student.deleted_at.is_(None)
         ).first()
 
         if not student:
-            return None, None
+            return None
 
-        school = db.query(School).filter(School.id == student.school_id).first()
+        school = self.db.query(School).filter(
+            School.id == student.school_id
+        ).first()
+
         return student, school
 
-    @staticmethod
-    def _get_student_totals(
-        db: Session,
-        student_id: int,
-        start_date: date,
-        end_date: date,
-    ) -> tuple[Decimal, Decimal, Decimal]:
+    def _calculate_totals(self) -> tuple[Decimal, Decimal, Decimal]:
         """Aggregate totals for student invoices (pure aggregation logic)
 
         Returns:
-            (total_invoiced, total_paid, total_pending)
+            Tuple of (total_invoiced, total_paid, total_pending)
         """
         # SUM(invoice.total_amount) for total_invoiced
-        total_invoiced_result = db.query(
+        total_invoiced_result = self.db.query(
             func.coalesce(func.sum(Invoice.total_amount), 0)
         ).filter(
-            Invoice.student_id == student_id,
+            Invoice.student_id == self.student_id,
             Invoice.deleted_at.is_(None),
             Invoice.status != 'cancelled',
-            Invoice.issue_date >= start_date,
-            Invoice.issue_date <= end_date
+            Invoice.issue_date >= self.start_date,
+            Invoice.issue_date <= self.end_date
         ).scalar()
 
         total_invoiced = Decimal(str(total_invoiced_result))
 
         # SUM(payment.amount) for total_paid with date filters on invoice issue_date
-        total_paid_result = db.query(
+        total_paid_result = self.db.query(
             func.coalesce(func.sum(Payment.amount), 0)
         ).join(
             Invoice, Payment.invoice_id == Invoice.id
         ).filter(
-            Invoice.student_id == student_id,
+            Invoice.student_id == self.student_id,
             Invoice.deleted_at.is_(None),
             Invoice.status != 'cancelled',
             Payment.deleted_at.is_(None),
-            Invoice.issue_date >= start_date,
-            Invoice.issue_date <= end_date
+            Invoice.issue_date >= self.start_date,
+            Invoice.issue_date <= self.end_date
         ).scalar()
 
         total_paid = Decimal(str(total_paid_result))
@@ -72,14 +93,11 @@ class StudentStatementService:
 
         return total_invoiced, total_paid, total_pending
 
-    @staticmethod
-    def _get_student_invoice_rows(
-        db: Session,
-        student_id: int,
-        start_date: date,
-        end_date: date,
-    ) -> list[dict]:
+    def _build_invoice_rows(self) -> list[dict]:
         """Get invoice breakdown for student (expensive, optional, reusable)
+
+        Returns:
+            List of invoice dictionaries with paid/pending amounts
 
         Handles:
         - Invoice query
@@ -87,12 +105,12 @@ class StudentStatementService:
         - Row shaping
         """
         # Query for invoices with date filters
-        invoices = db.query(Invoice).filter(
-            Invoice.student_id == student_id,
+        invoices = self.db.query(Invoice).filter(
+            Invoice.student_id == self.student_id,
             Invoice.deleted_at.is_(None),
             Invoice.status != 'cancelled',
-            Invoice.issue_date >= start_date,
-            Invoice.issue_date <= end_date
+            Invoice.issue_date >= self.start_date,
+            Invoice.issue_date <= self.end_date
         ).all()
 
         if not invoices:
@@ -101,7 +119,7 @@ class StudentStatementService:
         # Single grouped query to get paid amounts for all invoices (no N+1)
         invoice_ids = [invoice.id for invoice in invoices]
 
-        payment_results = db.query(
+        payment_results = self.db.query(
             Payment.invoice_id,
             func.coalesce(func.sum(Payment.amount), 0).label('paid_amount')
         ).filter(
@@ -130,41 +148,28 @@ class StudentStatementService:
 
         return invoice_items
 
-    @staticmethod
-    def get_statement(
-        student_id: int,
-        db: Session,
-        start_date: date,
-        end_date: date,
-        include_invoices: bool = False
-    ):
+    def get_statement(self):
         """Get account statement for a student (application-level use case)
 
         Orchestrates the statement generation by delegating to helper methods.
 
-        Args:
-            student_id: The student ID
-            db: Database session
-            start_date: Filter for invoices issued on or after this date (required)
-            end_date: Filter for invoices issued on or before this date (required)
-            include_invoices: Whether to include the list of invoices (default: False)
+        Returns:
+            Statement dict or None if student not found
         """
         # Validation / existence check
-        student, school = StudentStatementService._get_student_and_school(db, student_id)
-        if not student:
+        result = self._get_student_and_school()
+        if not result:
             return None
 
+        student, school = result
+
         # Aggregation queries
-        total_invoiced, total_paid, total_pending = StudentStatementService._get_student_totals(
-            db, student_id, start_date, end_date
-        )
+        total_invoiced, total_paid, total_pending = self._calculate_totals()
 
         # Optional detail expansion
         invoice_items = None
-        if include_invoices:
-            invoice_items = StudentStatementService._get_student_invoice_rows(
-                db, student_id, start_date, end_date
-            )
+        if self.include_invoices:
+            invoice_items = self._build_invoice_rows()
 
         # Build and return statement
         return {
@@ -173,8 +178,8 @@ class StudentStatementService:
             "school_id": school.id,
             "school_name": school.name,
             "period": {
-                "start_date": start_date,
-                "end_date": end_date
+                "start_date": self.start_date,
+                "end_date": self.end_date
             },
             "summary": {
                 "total_invoiced": total_invoiced,

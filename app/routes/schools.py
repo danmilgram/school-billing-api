@@ -92,9 +92,14 @@ def get_school_account_statement(
     - end_date (required): Filter for invoices issued on or before this date (format: YYYY-MM-DD)
     - include_invoices (optional, default: false): Include the list of invoices in the response
     """
-    statement = SchoolStatementService.get_statement(
-        school_id, db, start_date=start_date, end_date=end_date, include_invoices=include_invoices
+    service = SchoolStatementService(
+        school_id=school_id,
+        db=db,
+        start_date=start_date,
+        end_date=end_date,
+        include_invoices=include_invoices
     )
+    statement = service.get_statement()
     if not statement:
         raise HTTPException(status_code=404, detail="School not found")
     return statement

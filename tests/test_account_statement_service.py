@@ -54,12 +54,14 @@ def test_student_statement_basic(db):
         db
     )
 
-    statement = StudentStatementService.get_statement(
-        student.id, db,
+    service = StudentStatementService(
+        student_id=student.id,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
         include_invoices=True
     )
+    statement = service.get_statement()
 
     assert statement is not None
     assert statement["student_id"] == student.id
@@ -105,12 +107,14 @@ def test_student_statement_multiple_invoices(db):
     PaymentService.create(invoice1, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("1000.00"), payment_method="cash"), db)
     PaymentService.create(invoice2, PaymentCreate(payment_date=date(2024, 2, 5), amount=Decimal("200.00"), payment_method="cash"), db)
 
-    statement = StudentStatementService.get_statement(
-        student.id, db,
+    service = StudentStatementService(
+        student_id=student.id,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
         include_invoices=True
     )
+    statement = service.get_statement()
 
     assert statement["summary"]["total_invoiced"] == Decimal("1500.00")
     assert statement["summary"]["total_paid"] == Decimal("1200.00")
@@ -145,12 +149,14 @@ def test_student_statement_excludes_cancelled_invoices(db):
     # Cancel the first invoice
     InvoiceService.cancel(invoice1, db)
 
-    statement = StudentStatementService.get_statement(
-        student.id, db,
+    service = StudentStatementService(
+        student_id=student.id,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
         include_invoices=True
     )
+    statement = service.get_statement()
 
     # Should only include invoice2
     assert statement["summary"]["total_invoiced"] == Decimal("500.00")
@@ -161,11 +167,13 @@ def test_student_statement_excludes_cancelled_invoices(db):
 
 def test_student_statement_nonexistent_student(db):
     """Test student statement for non-existent student"""
-    statement = StudentStatementService.get_statement(
-        999, db,
+    service = StudentStatementService(
+        student_id=999,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31)
     )
+    statement = service.get_statement()
 
     assert statement is None
 
@@ -186,12 +194,14 @@ def test_school_statement_basic(db):
     )
     PaymentService.create(invoice, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("400.00"), payment_method="cash"), db)
 
-    statement = SchoolStatementService.get_statement(
-        school.id, db,
+    service = SchoolStatementService(
+        school_id=school.id,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
         include_invoices=True
     )
+    statement = service.get_statement()
 
     assert statement is not None
     assert statement["school_id"] == school.id
@@ -248,12 +258,14 @@ def test_school_statement_multiple_students(db):
     PaymentService.create(invoice1, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("500.00"), payment_method="cash"), db)
     PaymentService.create(invoice2, PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("1200.00"), payment_method="cash"), db)
 
-    statement = SchoolStatementService.get_statement(
-        school.id, db,
+    service = SchoolStatementService(
+        school_id=school.id,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
         include_invoices=True
     )
+    statement = service.get_statement()
 
     assert statement["student_count"] == 2
     assert statement["summary"]["total_invoiced"] == Decimal("2200.00")
@@ -288,12 +300,14 @@ def test_school_statement_excludes_cancelled_invoices(db):
     # Cancel the first invoice
     InvoiceService.cancel(invoice1, db)
 
-    statement = SchoolStatementService.get_statement(
-        school.id, db,
+    service = SchoolStatementService(
+        school_id=school.id,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
         include_invoices=True
     )
+    statement = service.get_statement()
 
     # Should only include invoice2
     assert statement["summary"]["total_invoiced"] == Decimal("1000.00")
@@ -302,10 +316,12 @@ def test_school_statement_excludes_cancelled_invoices(db):
 
 def test_school_statement_nonexistent_school(db):
     """Test school statement for non-existent school"""
-    statement = SchoolStatementService.get_statement(
-        999, db,
+    service = SchoolStatementService(
+        school_id=999,
+        db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31)
     )
+    statement = service.get_statement()
 
     assert statement is None
