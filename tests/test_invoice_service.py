@@ -2,39 +2,15 @@ import pytest
 from datetime import date
 from decimal import Decimal
 from app.services.invoice_service import InvoiceService
-from app.services.school_service import SchoolService
-from app.services.student_service import StudentService
 from app.schemas.invoice import InvoiceCreate, InvoiceUpdate, InvoiceItemCreate
-from app.schemas.school import SchoolCreate
-from app.schemas.student import StudentCreate
 from app.models.invoice import Invoice, InvoiceStatus
 
 
-def create_test_student(db):
-    """Helper to create a test student"""
-    school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
-    )
-    student = StudentService.create(
-        StudentCreate(
-            school_id=school.id,
-            first_name="John",
-            last_name="Doe",
-            email="john@student.com",
-            enrollment_date=date(2024, 1, 15)
-        ),
-        db
-    )
-    return student
-
-
-def test_create_invoice_with_items(db):
+def test_create_invoice_with_items(db, test_student):
     """Test creating an invoice with items"""
-    student = create_test_student(db)
 
     invoice_data = InvoiceCreate(
-        student_id=student.id,
+        student_id=test_student.id,
         issue_date=date(2024, 1, 20),
         due_date=date(2024, 2, 20),
         items=[
@@ -46,18 +22,17 @@ def test_create_invoice_with_items(db):
     invoice = InvoiceService.create(invoice_data, db)
 
     assert invoice.id is not None
-    assert invoice.student_id == student.id
+    assert invoice.student_id == test_student.id
     assert invoice.total_amount == Decimal("11500.00")  # 10000 + (3 * 500)
     assert invoice.status == InvoiceStatus.PENDING
     assert len(invoice.items) == 2
 
 
-def test_invoice_total_calculated_from_items(db):
+def test_invoice_total_calculated_from_items(db, test_student):
     """Test that invoice total is correctly calculated from items"""
-    student = create_test_student(db)
 
     invoice_data = InvoiceCreate(
-        student_id=student.id,
+        student_id=test_student.id,
         issue_date=date(2024, 1, 20),
         due_date=date(2024, 2, 20),
         items=[
@@ -73,27 +48,14 @@ def test_invoice_total_calculated_from_items(db):
     assert invoice.total_amount == Decimal("600.00")
 
 
-def test_get_all_invoices(db):
+def test_get_all_invoices(db, invoice_factory, test_student):
     """Test getting all invoices"""
-    student = create_test_student(db)
-
-    InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("100.00"))]
-        ),
-        db
-    )
-    InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 2, 1),
-            due_date=date(2024, 3, 1),
-            items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("200.00"))]
-        ),
-        db
+    invoice_factory(test_student.id, items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("100.00"))])
+    invoice_factory(
+        test_student.id,
+        issue_date=date(2024, 2, 1),
+        due_date=date(2024, 3, 1),
+        items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("200.00"))]
     )
 
     invoices = InvoiceService.get_all(db)
@@ -101,105 +63,51 @@ def test_get_all_invoices(db):
     assert len(invoices) == 2
 
 
-def test_get_invoice_by_id(db):
+def test_get_invoice_by_id(db, test_invoice):
     """Test getting an invoice by ID"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("100.00"))]
-        ),
-        db
-    )
-
-    retrieved_invoice = InvoiceService.get_by_id(invoice.id, db)
+    retrieved_invoice = InvoiceService.get_by_id(test_invoice.id, db)
 
     assert retrieved_invoice is not None
-    assert retrieved_invoice.id == invoice.id
+    assert retrieved_invoice.id == test_invoice.id
 
 
-def test_update_invoice(db):
+def test_update_invoice(db, test_invoice):
     """Test updating an invoice"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("100.00"))]
-        ),
-        db
-    )
-
     update_data = InvoiceUpdate(due_date=date(2024, 3, 15))
-    updated_invoice = InvoiceService.update(invoice, update_data, db)
+    updated_invoice = InvoiceService.update(test_invoice, update_data, db)
 
     assert updated_invoice.due_date == date(2024, 3, 15)
 
 
-def test_cancel_invoice(db):
+def test_cancel_invoice(db, test_invoice):
     """Test cancelling an invoice"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("100.00"))]
-        ),
-        db
-    )
-
-    cancelled_invoice = InvoiceService.cancel(invoice, db)
+    cancelled_invoice = InvoiceService.cancel(test_invoice, db)
 
     assert cancelled_invoice.status == InvoiceStatus.CANCELLED
 
 
-def test_add_item_recalculates_total(db):
+def test_add_item_recalculates_total(db, test_invoice):
     """Test that adding an item recalculates the invoice total"""
-    student = create_test_student(db)
 
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[InvoiceItemCreate(description="Original Item", quantity=1, unit_price=Decimal("100.00"))]
-        ),
-        db
-    )
-
-    assert invoice.total_amount == Decimal("100.00")
+    assert test_invoice.total_amount == Decimal("1000.00")
 
     # Add a new item
     new_item = InvoiceItemCreate(description="New Item", quantity=2, unit_price=Decimal("50.00"))
-    InvoiceService.add_item(invoice, new_item, db)
+    InvoiceService.add_item(test_invoice, new_item, db)
 
     # Refresh invoice and check total
-    db.refresh(invoice)
-    assert invoice.total_amount == Decimal("200.00")  # 100 + (2 * 50)
+    db.refresh(test_invoice)
+    assert test_invoice.total_amount == Decimal("1100.00")  # 1000 + (2 * 50)
 
 
-def test_update_item_recalculates_total(db):
+def test_update_item_recalculates_total(db, invoice_factory, test_student):
     """Test that updating an item recalculates the invoice total"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[
-                InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
-                InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00"))
-            ]
-        ),
-        db
+    invoice = invoice_factory(
+        test_student.id,
+        items=[
+            InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
+            InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00"))
+        ]
     )
 
     assert invoice.total_amount == Decimal("150.00")
@@ -214,21 +122,14 @@ def test_update_item_recalculates_total(db):
     assert invoice.total_amount == Decimal("650.00")  # (3 * 200) + 50
 
 
-def test_delete_item_recalculates_total(db):
+def test_delete_item_recalculates_total(db, invoice_factory, test_student):
     """Test that deleting an item recalculates the invoice total"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[
-                InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
-                InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00"))
-            ]
-        ),
-        db
+    invoice = invoice_factory(
+        test_student.id,
+        items=[
+            InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
+            InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00"))
+        ]
     )
 
     assert invoice.total_amount == Decimal("150.00")
@@ -242,48 +143,30 @@ def test_delete_item_recalculates_total(db):
     assert invoice.total_amount == Decimal("50.00")
 
 
-def test_cannot_delete_last_item(db):
+def test_cannot_delete_last_item(db, test_invoice):
     """Test that you cannot delete the last item in an invoice"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[InvoiceItemCreate(description="Only Item", quantity=1, unit_price=Decimal("100.00"))]
-        ),
-        db
-    )
 
     # Try to delete the only item
-    item = invoice.items[0]
+    item = test_invoice.items[0]
     result = InvoiceService.delete_item(item, db)
 
     assert result is None  # Should return None (deletion not allowed)
 
     # Invoice should still have the item
-    db.refresh(invoice)
-    active_items = [item for item in invoice.items if item.deleted_at is None]
+    db.refresh(test_invoice)
+    active_items = [item for item in test_invoice.items if item.deleted_at is None]
     assert len(active_items) == 1
 
 
-def test_recalculate_total_excludes_deleted_items(db):
+def test_recalculate_total_excludes_deleted_items(db, invoice_factory, test_student):
     """Test that recalculate_total excludes soft-deleted items"""
-    student = create_test_student(db)
-
-    invoice = InvoiceService.create(
-        InvoiceCreate(
-            student_id=student.id,
-            issue_date=date(2024, 1, 20),
-            due_date=date(2024, 2, 20),
-            items=[
-                InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
-                InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00")),
-                InvoiceItemCreate(description="Item 3", quantity=1, unit_price=Decimal("25.00"))
-            ]
-        ),
-        db
+    invoice = invoice_factory(
+        test_student.id,
+        items=[
+            InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
+            InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00")),
+            InvoiceItemCreate(description="Item 3", quantity=1, unit_price=Decimal("25.00"))
+        ]
     )
 
     assert invoice.total_amount == Decimal("175.00")
