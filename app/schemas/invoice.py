@@ -1,7 +1,9 @@
-from pydantic import BaseModel, field_validator
-from datetime import datetime, date
-from typing import Optional, List
+from datetime import date, datetime
 from decimal import Decimal
+from typing import List, Optional
+
+from pydantic import BaseModel, field_validator
+
 from app.models.invoice import InvoiceStatus
 
 
@@ -12,18 +14,18 @@ class InvoiceItemBase(BaseModel):
 
 
 class InvoiceItemCreate(InvoiceItemBase):
-    @field_validator('quantity')
+    @field_validator("quantity")
     @classmethod
     def quantity_must_be_positive(cls, v):
         if v <= 0:
-            raise ValueError('Quantity must be greater than 0')
+            raise ValueError("Quantity must be greater than 0")
         return v
 
-    @field_validator('unit_price')
+    @field_validator("unit_price")
     @classmethod
     def unit_price_must_be_non_negative(cls, v):
         if v < 0:
-            raise ValueError('Unit price must be non-negative')
+            raise ValueError("Unit price must be non-negative")
         return v
 
 
@@ -48,11 +50,11 @@ class InvoiceBase(BaseModel):
 class InvoiceCreate(InvoiceBase):
     items: List[InvoiceItemCreate]
 
-    @field_validator('items')
+    @field_validator("items")
     @classmethod
     def items_must_not_be_empty(cls, v):
         if not v or len(v) == 0:
-            raise ValueError('Invoice must have at least one item')
+            raise ValueError("Invoice must have at least one item")
         return v
 
 

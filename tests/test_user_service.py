@@ -1,16 +1,13 @@
-import pytest
-from app.services.user_service import UserService
-from app.schemas.user import UserCreate, UserUpdate
-from app.models.user import User, UserRole
 from app.core.security import verify_password
+from app.models.user import User, UserRole
+from app.schemas.user import UserCreate, UserUpdate
+from app.services.user_service import UserService
 
 
 def test_create_user(db):
     """Test creating a new user"""
     user_data = UserCreate(
-        email="test@example.com",
-        password="password123",
-        full_name="Test User"
+        email="test@example.com", password="password123", full_name="Test User"
     )
 
     user = UserService.create(user_data, db)
@@ -28,8 +25,10 @@ def test_create_user(db):
 def test_get_user_by_email(db):
     """Test getting a user by email"""
     user = UserService.create(
-        UserCreate(email="test@example.com", password="password123", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="password123", full_name="Test User"
+        ),
+        db,
     )
 
     retrieved_user = UserService.get_by_email("test@example.com", db)
@@ -49,8 +48,10 @@ def test_get_nonexistent_user_by_email(db):
 def test_get_user_by_id(db):
     """Test getting a user by ID"""
     user = UserService.create(
-        UserCreate(email="test@example.com", password="password123", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="password123", full_name="Test User"
+        ),
+        db,
     )
 
     retrieved_user = UserService.get_by_id(user.id, db)
@@ -70,8 +71,12 @@ def test_get_nonexistent_user_by_id(db):
 def test_update_user(db):
     """Test updating a user"""
     user = UserService.create(
-        UserCreate(email="original@example.com", password="password123", full_name="Original Name"),
-        db
+        UserCreate(
+            email="original@example.com",
+            password="password123",
+            full_name="Original Name",
+        ),
+        db,
     )
 
     update_data = UserUpdate(full_name="Updated Name")
@@ -84,8 +89,10 @@ def test_update_user(db):
 def test_update_user_password(db):
     """Test updating a user's password"""
     user = UserService.create(
-        UserCreate(email="test@example.com", password="oldpassword", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="oldpassword", full_name="Test User"
+        ),
+        db,
     )
 
     old_hashed_password = user.hashed_password
@@ -102,8 +109,10 @@ def test_update_user_password(db):
 def test_authenticate_user_success(db):
     """Test successful user authentication"""
     UserService.create(
-        UserCreate(email="test@example.com", password="password123", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="password123", full_name="Test User"
+        ),
+        db,
     )
 
     authenticated_user = UserService.authenticate("test@example.com", "password123", db)
@@ -115,8 +124,10 @@ def test_authenticate_user_success(db):
 def test_authenticate_user_wrong_password(db):
     """Test authentication with wrong password"""
     UserService.create(
-        UserCreate(email="test@example.com", password="password123", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="password123", full_name="Test User"
+        ),
+        db,
     )
 
     authenticated_user = UserService.authenticate("test@example.com", "wrongpassword", db)
@@ -126,7 +137,9 @@ def test_authenticate_user_wrong_password(db):
 
 def test_authenticate_nonexistent_user(db):
     """Test authentication with non-existent email"""
-    authenticated_user = UserService.authenticate("nonexistent@example.com", "password123", db)
+    authenticated_user = UserService.authenticate(
+        "nonexistent@example.com", "password123", db
+    )
 
     assert authenticated_user is None
 
@@ -134,8 +147,10 @@ def test_authenticate_nonexistent_user(db):
 def test_soft_delete_user(db):
     """Test soft deleting a user"""
     user = UserService.create(
-        UserCreate(email="delete@example.com", password="password123", full_name="To Delete"),
-        db
+        UserCreate(
+            email="delete@example.com", password="password123", full_name="To Delete"
+        ),
+        db,
     )
 
     UserService.delete(user, db)
@@ -157,8 +172,10 @@ def test_soft_delete_user(db):
 def test_get_by_email_excludes_soft_deleted(db):
     """Test that get_by_email excludes soft-deleted users"""
     user = UserService.create(
-        UserCreate(email="test@example.com", password="password123", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="password123", full_name="Test User"
+        ),
+        db,
     )
 
     # Soft delete user
@@ -172,8 +189,10 @@ def test_get_by_email_excludes_soft_deleted(db):
 def test_authenticate_soft_deleted_user(db):
     """Test that authentication fails for soft-deleted users"""
     user = UserService.create(
-        UserCreate(email="test@example.com", password="password123", full_name="Test User"),
-        db
+        UserCreate(
+            email="test@example.com", password="password123", full_name="Test User"
+        ),
+        db,
     )
 
     # Soft delete user

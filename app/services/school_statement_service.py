@@ -1,12 +1,13 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
-from app.models.school import School
-from app.models.student import Student
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.models.invoice import Invoice
 from app.models.payment import Payment
+from app.models.school import School
+from app.models.student import Student
 
 
 class SchoolStatementService:
@@ -18,7 +19,7 @@ class SchoolStatementService:
         db: Session,
         start_date: date,
         end_date: date,
-        include_invoices: bool = False
+        include_invoices: bool = False,
     ):
         """Initialize the service with request parameters
 
@@ -41,18 +42,20 @@ class SchoolStatementService:
         Returns:
             Tuple of (school, student_count) if school exists, None otherwise
         """
-        school = self.db.query(School).filter(
-            School.id == self.school_id,
-            School.deleted_at.is_(None)
-        ).first()
+        school = (
+            self.db.query(School)
+            .filter(School.id == self.school_id, School.deleted_at.is_(None))
+            .first()
+        )
 
         if not school:
             return None
 
-        student_count = self.db.query(Student).filter(
-            Student.school_id == self.school_id,
-            Student.deleted_at.is_(None)
-        ).count()
+        student_count = (
+            self.db.query(Student)
+            .filter(Student.school_id == self.school_id, Student.deleted_at.is_(None))
+            .count()
+        )
 
         return school, student_count
 
@@ -63,37 +66,38 @@ class SchoolStatementService:
             Tuple of (total_invoiced, total_paid, total_pending)
         """
         # Query for total_invoiced with date filters
-        total_invoiced_result = self.db.query(
-            func.coalesce(func.sum(Invoice.total_amount), 0)
-        ).join(
-            Student, Invoice.student_id == Student.id
-        ).filter(
-            Student.school_id == self.school_id,
-            Student.deleted_at.is_(None),
-            Invoice.deleted_at.is_(None),
-            Invoice.status != 'cancelled',
-            Invoice.issue_date >= self.start_date,
-            Invoice.issue_date <= self.end_date
-        ).scalar()
+        total_invoiced_result = (
+            self.db.query(func.coalesce(func.sum(Invoice.total_amount), 0))
+            .join(Student, Invoice.student_id == Student.id)
+            .filter(
+                Student.school_id == self.school_id,
+                Student.deleted_at.is_(None),
+                Invoice.deleted_at.is_(None),
+                Invoice.status != "cancelled",
+                Invoice.issue_date >= self.start_date,
+                Invoice.issue_date <= self.end_date,
+            )
+            .scalar()
+        )
 
         total_invoiced = Decimal(str(total_invoiced_result))
 
         # Query for total_paid with date filters on invoice issue_date
-        total_paid_result = self.db.query(
-            func.coalesce(func.sum(Payment.amount), 0)
-        ).join(
-            Invoice, Payment.invoice_id == Invoice.id
-        ).join(
-            Student, Invoice.student_id == Student.id
-        ).filter(
-            Student.school_id == self.school_id,
-            Student.deleted_at.is_(None),
-            Invoice.deleted_at.is_(None),
-            Invoice.status != 'cancelled',
-            Payment.deleted_at.is_(None),
-            Invoice.issue_date >= self.start_date,
-            Invoice.issue_date <= self.end_date
-        ).scalar()
+        total_paid_result = (
+            self.db.query(func.coalesce(func.sum(Payment.amount), 0))
+            .join(Invoice, Payment.invoice_id == Invoice.id)
+            .join(Student, Invoice.student_id == Student.id)
+            .filter(
+                Student.school_id == self.school_id,
+                Student.deleted_at.is_(None),
+                Invoice.deleted_at.is_(None),
+                Invoice.status != "cancelled",
+                Payment.deleted_at.is_(None),
+                Invoice.issue_date >= self.start_date,
+                Invoice.issue_date <= self.end_date,
+            )
+            .scalar()
+        )
 
         total_paid = Decimal(str(total_paid_result))
         total_pending = total_invoiced - total_paid
@@ -112,16 +116,19 @@ class SchoolStatementService:
         - Row shaping
         """
         # Query for invoices with date filters
-        invoices = self.db.query(Invoice).join(
-            Student, Invoice.student_id == Student.id
-        ).filter(
-            Student.school_id == self.school_id,
-            Student.deleted_at.is_(None),
-            Invoice.deleted_at.is_(None),
-            Invoice.status != 'cancelled',
-            Invoice.issue_date >= self.start_date,
-            Invoice.issue_date <= self.end_date
-        ).all()
+        invoices = (
+            self.db.query(Invoice)
+            .join(Student, Invoice.student_id == Student.id)
+            .filter(
+                Student.school_id == self.school_id,
+                Student.deleted_at.is_(None),
+                Invoice.deleted_at.is_(None),
+                Invoice.status != "cancelled",
+                Invoice.issue_date >= self.start_date,
+                Invoice.issue_date <= self.end_date,
+            )
+            .all()
+        )
 
         if not invoices:
             return []
@@ -129,16 +136,20 @@ class SchoolStatementService:
         # Single grouped query to get paid amounts for all invoices (no N+1)
         invoice_ids = [invoice.id for invoice in invoices]
 
-        payment_results = self.db.query(
-            Payment.invoice_id,
-            func.coalesce(func.sum(Payment.amount), 0).label('paid_amount')
-        ).filter(
-            Payment.invoice_id.in_(invoice_ids),
-            Payment.deleted_at.is_(None)
-        ).group_by(Payment.invoice_id).all()
+        payment_results = (
+            self.db.query(
+                Payment.invoice_id,
+                func.coalesce(func.sum(Payment.amount), 0).label("paid_amount"),
+            )
+            .filter(Payment.invoice_id.in_(invoice_ids), Payment.deleted_at.is_(None))
+            .group_by(Payment.invoice_id)
+            .all()
+        )
 
         # Build a dictionary for O(1) lookup
-        payment_totals = {invoice_id: Decimal(str(paid)) for invoice_id, paid in payment_results}
+        payment_totals = {
+            invoice_id: Decimal(str(paid)) for invoice_id, paid in payment_results
+        }
 
         # Now build invoice items with O(1) lookup per invoice
         invoice_items = []
@@ -146,16 +157,18 @@ class SchoolStatementService:
             paid_amount = payment_totals.get(invoice.id, Decimal("0"))
             pending_amount = invoice.total_amount - paid_amount
 
-            invoice_items.append({
-                "invoice_id": invoice.id,
-                "student_id": invoice.student_id,
-                "issue_date": invoice.issue_date,
-                "due_date": invoice.due_date,
-                "status": invoice.status.upper(),
-                "total_amount": invoice.total_amount,
-                "paid_amount": paid_amount,
-                "pending_amount": pending_amount
-            })
+            invoice_items.append(
+                {
+                    "invoice_id": invoice.id,
+                    "student_id": invoice.student_id,
+                    "issue_date": invoice.issue_date,
+                    "due_date": invoice.due_date,
+                    "status": invoice.status.upper(),
+                    "total_amount": invoice.total_amount,
+                    "paid_amount": paid_amount,
+                    "pending_amount": pending_amount,
+                }
+            )
 
         return invoice_items
 
@@ -186,15 +199,12 @@ class SchoolStatementService:
         return {
             "school_id": school.id,
             "school_name": school.name,
-            "period": {
-                "start_date": self.start_date,
-                "end_date": self.end_date
-            },
+            "period": {"start_date": self.start_date, "end_date": self.end_date},
             "student_count": student_count,
             "summary": {
                 "total_invoiced": total_invoiced,
                 "total_paid": total_paid,
-                "total_pending": total_pending
+                "total_pending": total_pending,
             },
-            "invoices": invoice_items
+            "invoices": invoice_items,
         }

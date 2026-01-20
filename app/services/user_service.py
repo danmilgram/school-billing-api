@@ -1,37 +1,33 @@
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
+from sqlalchemy.orm import Session
+
+from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
-from app.core.security import hash_password, verify_password
 
 
 class UserService:
-
     @staticmethod
     def get_by_email(email: str, db: Session):
         """Get user by email excluding soft-deleted"""
-        return db.query(User).filter(
-            User.email == email,
-            User.deleted_at.is_(None)
-        ).first()
+        return (
+            db.query(User).filter(User.email == email, User.deleted_at.is_(None)).first()
+        )
 
     @staticmethod
     def get_by_id(user_id: int, db: Session):
         """Get user by ID excluding soft-deleted"""
-        return db.query(User).filter(
-            User.id == user_id,
-            User.deleted_at.is_(None)
-        ).first()
+        return (
+            db.query(User).filter(User.id == user_id, User.deleted_at.is_(None)).first()
+        )
 
     @staticmethod
     def create(user_in: UserCreate, db: Session):
         """Create a new user with hashed password"""
         hashed_pwd = hash_password(user_in.password)
         user = User(
-            email=user_in.email,
-            hashed_password=hashed_pwd,
-            full_name=user_in.full_name
+            email=user_in.email, hashed_password=hashed_pwd, full_name=user_in.full_name
         )
         db.add(user)
         db.commit()

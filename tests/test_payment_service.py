@@ -1,18 +1,18 @@
-import pytest
 from datetime import date
 from decimal import Decimal
-from app.services.payment_service import PaymentService
-from app.schemas.payment import PaymentCreate
+
+import pytest
+
 from app.models.invoice import InvoiceStatus
+from app.schemas.payment import PaymentCreate
+from app.services.payment_service import PaymentService
 
 
 def test_create_payment(db, test_invoice):
     """Test creating a payment"""
 
     payment_data = PaymentCreate(
-        payment_date=date(2024, 1, 25),
-        amount=Decimal("500.00"),
-        payment_method="cash"
+        payment_date=date(2024, 1, 25), amount=Decimal("500.00"), payment_method="cash"
     )
 
     payment = PaymentService.create(test_invoice, payment_data, db)
@@ -28,9 +28,7 @@ def test_full_payment_updates_invoice_status(db, test_invoice):
     """Test that a full payment updates invoice status to PAID"""
 
     payment_data = PaymentCreate(
-        payment_date=date(2024, 1, 25),
-        amount=Decimal("1000.00"),
-        payment_method="cash"
+        payment_date=date(2024, 1, 25), amount=Decimal("1000.00"), payment_method="cash"
     )
 
     PaymentService.create(test_invoice, payment_data, db)
@@ -43,9 +41,7 @@ def test_full_payment_updates_invoice_status(db, test_invoice):
 def test_partial_payment_keeps_pending_status(db, test_invoice):
     """Test that a partial payment keeps invoice status as PENDING"""
     payment_data = PaymentCreate(
-        payment_date=date(2024, 1, 25),
-        amount=Decimal("500.00"),
-        payment_method="cash"
+        payment_date=date(2024, 1, 25), amount=Decimal("500.00"), payment_method="cash"
     )
 
     PaymentService.create(test_invoice, payment_data, db)
@@ -60,8 +56,12 @@ def test_multiple_payments_to_full_amount_updates_status(db, test_invoice):
     # First payment
     PaymentService.create(
         test_invoice,
-        PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("600.00"), payment_method="cash"),
-        db
+        PaymentCreate(
+            payment_date=date(2024, 1, 25),
+            amount=Decimal("600.00"),
+            payment_method="cash",
+        ),
+        db,
     )
 
     db.refresh(test_invoice)
@@ -70,8 +70,12 @@ def test_multiple_payments_to_full_amount_updates_status(db, test_invoice):
     # Second payment completing the total
     PaymentService.create(
         test_invoice,
-        PaymentCreate(payment_date=date(2024, 1, 26), amount=Decimal("400.00"), payment_method="cash"),
-        db
+        PaymentCreate(
+            payment_date=date(2024, 1, 26),
+            amount=Decimal("400.00"),
+            payment_method="cash",
+        ),
+        db,
     )
 
     db.refresh(test_invoice)
@@ -83,9 +87,7 @@ def test_cannot_overpay_invoice(db, test_invoice):
 
     # Try to pay more than the invoice total
     payment_data = PaymentCreate(
-        payment_date=date(2024, 1, 25),
-        amount=Decimal("1500.00"),
-        payment_method="cash"
+        payment_date=date(2024, 1, 25), amount=Decimal("1500.00"), payment_method="cash"
     )
 
     with pytest.raises(ValueError, match="Payment would exceed invoice total"):
@@ -97,15 +99,19 @@ def test_cannot_overpay_with_multiple_payments(db, test_invoice):
     # First payment
     PaymentService.create(
         test_invoice,
-        PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("800.00"), payment_method="cash"),
-        db
+        PaymentCreate(
+            payment_date=date(2024, 1, 25),
+            amount=Decimal("800.00"),
+            payment_method="cash",
+        ),
+        db,
     )
 
     # Try to pay more than the remaining amount
     payment_data = PaymentCreate(
         payment_date=date(2024, 1, 26),
         amount=Decimal("300.00"),  # Total would be 1100
-        payment_method="cash"
+        payment_method="cash",
     )
 
     with pytest.raises(ValueError, match="Payment would exceed invoice total"):
@@ -117,15 +123,17 @@ def test_error_message_shows_remaining_amount(db, test_invoice):
     # Make a partial payment
     PaymentService.create(
         test_invoice,
-        PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("700.00"), payment_method="cash"),
-        db
+        PaymentCreate(
+            payment_date=date(2024, 1, 25),
+            amount=Decimal("700.00"),
+            payment_method="cash",
+        ),
+        db,
     )
 
     # Try to overpay
     payment_data = PaymentCreate(
-        payment_date=date(2024, 1, 26),
-        amount=Decimal("500.00"),
-        payment_method="cash"
+        payment_date=date(2024, 1, 26), amount=Decimal("500.00"), payment_method="cash"
     )
 
     with pytest.raises(ValueError, match="Remaining amount: 300"):
@@ -137,13 +145,21 @@ def test_get_payments_by_invoice(db, test_invoice):
     # Create multiple payments
     PaymentService.create(
         test_invoice,
-        PaymentCreate(payment_date=date(2024, 1, 25), amount=Decimal("300.00"), payment_method="cash"),
-        db
+        PaymentCreate(
+            payment_date=date(2024, 1, 25),
+            amount=Decimal("300.00"),
+            payment_method="cash",
+        ),
+        db,
     )
     PaymentService.create(
         test_invoice,
-        PaymentCreate(payment_date=date(2024, 1, 26), amount=Decimal("400.00"), payment_method="card"),
-        db
+        PaymentCreate(
+            payment_date=date(2024, 1, 26),
+            amount=Decimal("400.00"),
+            payment_method="card",
+        ),
+        db,
     )
 
     payments = PaymentService.get_by_invoice(test_invoice.id, db)
@@ -155,7 +171,9 @@ def test_get_payments_by_invoice(db, test_invoice):
 
 def test_get_payment_by_id(db, test_payment):
     """Test getting a payment by ID"""
-    retrieved_payment = PaymentService.get_by_id(test_payment.id, test_payment.invoice_id, db)
+    retrieved_payment = PaymentService.get_by_id(
+        test_payment.id, test_payment.invoice_id, db
+    )
 
     assert retrieved_payment is not None
     assert retrieved_payment.id == test_payment.id

@@ -1,18 +1,22 @@
-import pytest
 from datetime import date
-from app.services.student_service import StudentService
-from app.services.school_service import SchoolService
-from app.schemas.student import StudentCreate, StudentUpdate
-from app.schemas.school import SchoolCreate
+
 from app.models.student import Student, StudentStatus
+from app.schemas.school import SchoolCreate
+from app.schemas.student import StudentCreate, StudentUpdate
+from app.services.school_service import SchoolService
+from app.services.student_service import StudentService
 
 
 def test_create_student(db):
     """Test creating a new student"""
     # Create a school first
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     student_data = StudentCreate(
@@ -21,7 +25,7 @@ def test_create_student(db):
         last_name="Doe",
         email="john.doe@student.com",
         enrollment_date=date(2024, 1, 15),
-        status=StudentStatus.ACTIVE
+        status=StudentStatus.ACTIVE,
     )
 
     student = StudentService.create(student_data, db)
@@ -39,30 +43,34 @@ def test_create_student(db):
 def test_get_all_students(db):
     """Test getting all students"""
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     # Create multiple students
-    student1 = StudentService.create(
+    StudentService.create(
         StudentCreate(
             school_id=school.id,
             first_name="John",
             last_name="Doe",
             email="john@student.com",
-            enrollment_date=date(2024, 1, 15)
+            enrollment_date=date(2024, 1, 15),
         ),
-        db
+        db,
     )
-    student2 = StudentService.create(
+    StudentService.create(
         StudentCreate(
             school_id=school.id,
             first_name="Jane",
             last_name="Smith",
             email="jane@student.com",
-            enrollment_date=date(2024, 2, 1)
+            enrollment_date=date(2024, 2, 1),
         ),
-        db
+        db,
     )
 
     students = StudentService.get_all(db)
@@ -75,8 +83,12 @@ def test_get_all_students(db):
 def test_get_student_by_id(db):
     """Test getting a student by ID"""
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     student = StudentService.create(
@@ -85,9 +97,9 @@ def test_get_student_by_id(db):
             first_name="John",
             last_name="Doe",
             email="john@student.com",
-            enrollment_date=date(2024, 1, 15)
+            enrollment_date=date(2024, 1, 15),
         ),
-        db
+        db,
     )
 
     retrieved_student = StudentService.get_by_id(student.id, db)
@@ -107,8 +119,12 @@ def test_get_nonexistent_student(db):
 def test_update_student(db):
     """Test updating a student"""
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     student = StudentService.create(
@@ -117,9 +133,9 @@ def test_update_student(db):
             first_name="John",
             last_name="Doe",
             email="john@student.com",
-            enrollment_date=date(2024, 1, 15)
+            enrollment_date=date(2024, 1, 15),
         ),
-        db
+        db,
     )
 
     update_data = StudentUpdate(first_name="Jane", email="jane@student.com")
@@ -133,8 +149,12 @@ def test_update_student(db):
 def test_update_student_status(db):
     """Test updating student status"""
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     student = StudentService.create(
@@ -144,9 +164,9 @@ def test_update_student_status(db):
             last_name="Doe",
             email="john@student.com",
             enrollment_date=date(2024, 1, 15),
-            status=StudentStatus.ACTIVE
+            status=StudentStatus.ACTIVE,
         ),
-        db
+        db,
     )
 
     update_data = StudentUpdate(status=StudentStatus.GRADUATED)
@@ -158,8 +178,12 @@ def test_update_student_status(db):
 def test_soft_delete_student(db):
     """Test soft deleting a student"""
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     student = StudentService.create(
@@ -168,9 +192,9 @@ def test_soft_delete_student(db):
             first_name="John",
             last_name="Doe",
             email="john@student.com",
-            enrollment_date=date(2024, 1, 15)
+            enrollment_date=date(2024, 1, 15),
         ),
-        db
+        db,
     )
 
     StudentService.delete(student, db)
@@ -192,8 +216,12 @@ def test_soft_delete_student(db):
 def test_get_all_excludes_soft_deleted(db):
     """Test that get_all excludes soft-deleted students"""
     school = SchoolService.create(
-        SchoolCreate(name="Test School", contact_email="test@school.com", contact_phone="+1234567890"),
-        db
+        SchoolCreate(
+            name="Test School",
+            contact_email="test@school.com",
+            contact_phone="+1234567890",
+        ),
+        db,
     )
 
     student1 = StudentService.create(
@@ -202,9 +230,9 @@ def test_get_all_excludes_soft_deleted(db):
             first_name="John",
             last_name="Doe",
             email="john@student.com",
-            enrollment_date=date(2024, 1, 15)
+            enrollment_date=date(2024, 1, 15),
         ),
-        db
+        db,
     )
     student2 = StudentService.create(
         StudentCreate(
@@ -212,9 +240,9 @@ def test_get_all_excludes_soft_deleted(db):
             first_name="Jane",
             last_name="Smith",
             email="jane@student.com",
-            enrollment_date=date(2024, 2, 1)
+            enrollment_date=date(2024, 2, 1),
         ),
-        db
+        db,
     )
 
     # Soft delete student2

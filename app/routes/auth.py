@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
-from app.schemas.user import UserCreate, UserRead, Token
-from app.services.user_service import UserService
-from app.core.security import create_access_token
 from app.core.auth import get_current_user
+from app.core.database import get_db
+from app.core.security import create_access_token
 from app.models.user import User
+from app.schemas.user import Token, UserCreate, UserRead
+from app.services.user_service import UserService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -25,8 +25,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     existing_user = UserService.get_by_email(user_in.email, db)
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     # Create new user
@@ -36,8 +35,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     """
     Login with email and password to get access token
@@ -51,7 +49,7 @@ def login(
     user = UserService.authenticate(
         email=form_data.username,  # OAuth2PasswordRequestForm uses 'username' field
         password=form_data.password,
-        db=db
+        db=db,
     )
 
     if not user:
@@ -64,10 +62,7 @@ def login(
     # Create access token
     access_token = create_access_token(data={"sub": user.email})
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.get("/me", response_model=UserRead)

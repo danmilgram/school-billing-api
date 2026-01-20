@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Enum as SQLEnum
-from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
 import enum
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -20,14 +22,24 @@ class Student(Base):
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
-    # TODO: this is like a contact email, for a real model we might want to separate student and guardian(parents) contacts
+    # TODO: this is like a contact email, for a real model we might want to
+    # separate student and guardian(parents) contacts
     email = Column(String(255), nullable=False)
     enrollment_date = Column(Date, nullable=False)
     status = Column(SQLEnum(StudentStatus), default=StudentStatus.ACTIVE, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     school = relationship("School", back_populates="students")
-    invoices = relationship("Invoice", back_populates="student", cascade="all, delete-orphan")
+    invoices = relationship(
+        "Invoice", back_populates="student", cascade="all, delete-orphan"
+    )

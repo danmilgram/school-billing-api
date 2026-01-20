@@ -1,26 +1,31 @@
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
 
 from app.models.school import School
 from app.schemas.school import SchoolCreate, SchoolUpdate
 
 
 class SchoolService:
-
     @staticmethod
     def get_all(db: Session, skip: int = 0, limit: int = 100):
         """Get all schools excluding soft-deleted with pagination"""
-        return db.query(School).filter(
-            School.deleted_at.is_(None)
-        ).offset(skip).limit(limit).all()
+        return (
+            db.query(School)
+            .filter(School.deleted_at.is_(None))
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     @staticmethod
     def get_by_id(school_id: int, db: Session):
         """Get school by ID excluding soft-deleted"""
-        return db.query(School).filter(
-            School.id == school_id,
-            School.deleted_at.is_(None)
-        ).first()
+        return (
+            db.query(School)
+            .filter(School.id == school_id, School.deleted_at.is_(None))
+            .first()
+        )
 
     @staticmethod
     def create(school_in: SchoolCreate, db: Session):

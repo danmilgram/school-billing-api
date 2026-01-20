@@ -1,7 +1,9 @@
-from pydantic import BaseModel, field_validator
-from datetime import datetime, date
-from typing import Optional
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel, field_validator
+
 from app.models.payment import PaymentMethod
 
 
@@ -12,11 +14,11 @@ class PaymentBase(BaseModel):
 
 
 class PaymentCreate(PaymentBase):
-    @field_validator('amount')
+    @field_validator("amount")
     @classmethod
     def amount_must_be_positive(cls, v):
         if v <= 0:
-            raise ValueError('Payment amount must be greater than 0')
+            raise ValueError("Payment amount must be greater than 0")
         return v
 
 

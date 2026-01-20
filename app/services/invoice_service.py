@@ -1,23 +1,26 @@
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from sqlalchemy.orm import Session
+
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
-from app.schemas.invoice import InvoiceCreate, InvoiceUpdate, InvoiceItemCreate
+from app.schemas.invoice import InvoiceCreate, InvoiceItemCreate, InvoiceUpdate
 
 
 class InvoiceService:
-
     @staticmethod
     def recalculate_total(invoice: Invoice, db: Session):
         """Recalculate invoice total from non-deleted items"""
-        items = db.query(InvoiceItem).filter(
-            InvoiceItem.invoice_id == invoice.id,
-            InvoiceItem.deleted_at.is_(None)
-        ).all()
+        items = (
+            db.query(InvoiceItem)
+            .filter(
+                InvoiceItem.invoice_id == invoice.id, InvoiceItem.deleted_at.is_(None)
+            )
+            .all()
+        )
 
-        total = Decimal('0')
+        total = Decimal("0")
         for item in items:
             total += item.total_amount
 
@@ -28,7 +31,10 @@ class InvoiceService:
 
     @staticmethod
     def get_all(db: Session, skip: int = 0, limit: int = 100, status: str = None):
-        """Get all invoices excluding soft-deleted with pagination and optional status filter"""
+        """
+        Get all invoices excluding soft-deleted with pagination and optional
+        status filter
+        """
         query = db.query(Invoice).filter(Invoice.deleted_at.is_(None))
 
         if status:
@@ -39,23 +45,24 @@ class InvoiceService:
     @staticmethod
     def get_by_id(invoice_id: int, db: Session):
         """Get invoice by ID excluding soft-deleted"""
-        return db.query(Invoice).filter(
-            Invoice.id == invoice_id,
-            Invoice.deleted_at.is_(None)
-        ).first()
+        return (
+            db.query(Invoice)
+            .filter(Invoice.id == invoice_id, Invoice.deleted_at.is_(None))
+            .first()
+        )
 
     @staticmethod
     def create(invoice_in: InvoiceCreate, db: Session):
         """Create a new invoice with items"""
         # Calculate total from items
-        total_amount = Decimal('0')
+        total_amount = Decimal("0")
         for item in invoice_in.items:
             item_total = Decimal(str(item.quantity)) * item.unit_price
             total_amount += item_total
 
         # Create invoice
-        invoice_data = invoice_in.model_dump(exclude={'items'})
-        invoice_data['total_amount'] = total_amount
+        invoice_data = invoice_in.model_dump(exclude={"items"})
+        invoice_data["total_amount"] = total_amount
         invoice = Invoice(**invoice_data)
         db.add(invoice)
         db.flush()  # Get invoice ID
@@ -68,7 +75,7 @@ class InvoiceService:
                 description=item.description,
                 quantity=item.quantity,
                 unit_price=item.unit_price,
-                total_amount=item_total
+                total_amount=item_total,
             )
             db.add(invoice_item)
 
@@ -89,6 +96,7 @@ class InvoiceService:
     def cancel(invoice: Invoice, db: Session):
         """Cancel an invoice (business action)"""
         from app.models.invoice import InvoiceStatus
+
         invoice.status = InvoiceStatus.CANCELLED
         db.commit()
         db.refresh(invoice)
@@ -103,7 +111,7 @@ class InvoiceService:
             description=item_in.description,
             quantity=item_in.quantity,
             unit_price=item_in.unit_price,
-            total_amount=item_total
+            total_amount=item_total,
         )
         db.add(invoice_item)
         db.commit()
@@ -134,11 +142,15 @@ class InvoiceService:
     def delete_item(item: InvoiceItem, db: Session):
         """Soft delete invoice item and recalculate invoice total"""
         # Check if it's the last item
-        remaining_items = db.query(InvoiceItem).filter(
-            InvoiceItem.invoice_id == item.invoice_id,
-            InvoiceItem.deleted_at.is_(None),
-            InvoiceItem.id != item.id
-        ).count()
+        remaining_items = (
+            db.query(InvoiceItem)
+            .filter(
+                InvoiceItem.invoice_id == item.invoice_id,
+                InvoiceItem.deleted_at.is_(None),
+                InvoiceItem.id != item.id,
+            )
+            .count()
+        )
 
         if remaining_items == 0:
             return None  # Cannot delete last item
@@ -156,8 +168,12 @@ class InvoiceService:
     @staticmethod
     def get_item(invoice_id: int, item_id: int, db: Session):
         """Get invoice item by ID (must belong to invoice)"""
-        return db.query(InvoiceItem).filter(
-            InvoiceItem.id == item_id,
-            InvoiceItem.invoice_id == invoice_id,
-            InvoiceItem.deleted_at.is_(None)
-        ).first()
+        return (
+            db.query(InvoiceItem)
+            .filter(
+                InvoiceItem.id == item_id,
+                InvoiceItem.invoice_id == invoice_id,
+                InvoiceItem.deleted_at.is_(None),
+            )
+            .first()
+        )

@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, Date, DateTime, ForeignKey, Numeric, Enum as SQLEnum
-from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
 import enum
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
@@ -22,11 +24,22 @@ class Invoice(Base):
     due_date = Column(Date, nullable=False)
     total_amount = Column(Numeric(10, 2), nullable=False)
     status = Column(SQLEnum(InvoiceStatus), default=InvoiceStatus.PENDING, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
     deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     student = relationship("Student", back_populates="invoices")
-    items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
-    payments = relationship("Payment", back_populates="invoice", cascade="all, delete-orphan")
+    items = relationship(
+        "InvoiceItem", back_populates="invoice", cascade="all, delete-orphan"
+    )
+    payments = relationship(
+        "Payment", back_populates="invoice", cascade="all, delete-orphan"
+    )

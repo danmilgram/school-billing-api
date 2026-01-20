@@ -1,7 +1,8 @@
-from pydantic import BaseModel, ConfigDict
+from datetime import date
 from decimal import Decimal
 from typing import List
-from datetime import date
+
+from pydantic import BaseModel, ConfigDict
 
 
 class PeriodSchema(BaseModel):
@@ -17,6 +18,7 @@ class SummarySchema(BaseModel):
 
 class StatementInvoice(BaseModel):
     """Simplified invoice for statement views - no items, no nested details"""
+
     invoice_id: int
     issue_date: date
     due_date: date
@@ -40,6 +42,7 @@ class StudentAccountStatement(BaseModel):
 
 class InvoiceStatementItem(BaseModel):
     """Invoice item for school statements - includes student_id"""
+
     invoice_id: int
     student_id: int
     issue_date: date

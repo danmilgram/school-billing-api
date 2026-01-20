@@ -1,24 +1,27 @@
-import pytest
-
-
 def test_create_student_endpoint(client):
     """Test POST /api/v1/students/"""
     # Create a school first
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
-    response = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john.doe@student.com",
-        "enrollment_date": "2024-01-15",
-        "status": "active"
-    })
+    response = client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john.doe@student.com",
+            "enrollment_date": "2024-01-15",
+            "status": "active",
+        },
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -35,28 +38,37 @@ def test_create_student_endpoint(client):
 def test_list_students_endpoint(client):
     """Test GET /api/v1/students/"""
     # Create a school
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
     # Create two students
-    client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john@student.com",
-        "enrollment_date": "2024-01-15"
-    })
-    client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "Jane",
-        "last_name": "Smith",
-        "email": "jane@student.com",
-        "enrollment_date": "2024-02-01"
-    })
+    client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@student.com",
+            "enrollment_date": "2024-01-15",
+        },
+    )
+    client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "email": "jane@student.com",
+            "enrollment_date": "2024-02-01",
+        },
+    )
 
     response = client.get("/api/v1/students/")
 
@@ -70,21 +82,27 @@ def test_list_students_endpoint(client):
 def test_get_student_by_id_endpoint(client):
     """Test GET /api/v1/students/{student_id}"""
     # Create a school
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
     # Create a student
-    create_response = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john@student.com",
-        "enrollment_date": "2024-01-15"
-    })
+    create_response = client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@student.com",
+            "enrollment_date": "2024-01-15",
+        },
+    )
     student_id = create_response.json()["id"]
 
     # Get the student
@@ -107,28 +125,34 @@ def test_get_nonexistent_student_endpoint(client):
 def test_update_student_endpoint(client):
     """Test PUT /api/v1/students/{student_id}"""
     # Create a school
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
     # Create a student
-    create_response = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john@student.com",
-        "enrollment_date": "2024-01-15"
-    })
+    create_response = client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@student.com",
+            "enrollment_date": "2024-01-15",
+        },
+    )
     student_id = create_response.json()["id"]
 
     # Update the student
-    response = client.put(f"/api/v1/students/{student_id}", json={
-        "first_name": "Jane",
-        "email": "jane@student.com"
-    })
+    response = client.put(
+        f"/api/v1/students/{student_id}",
+        json={"first_name": "Jane", "email": "jane@student.com"},
+    )
 
     assert response.status_code == 200
     data = response.json()
@@ -140,28 +164,32 @@ def test_update_student_endpoint(client):
 def test_update_student_status_endpoint(client):
     """Test updating student status"""
     # Create a school
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
     # Create a student
-    create_response = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john@student.com",
-        "enrollment_date": "2024-01-15",
-        "status": "active"
-    })
+    create_response = client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@student.com",
+            "enrollment_date": "2024-01-15",
+            "status": "active",
+        },
+    )
     student_id = create_response.json()["id"]
 
     # Update status to graduated
-    response = client.put(f"/api/v1/students/{student_id}", json={
-        "status": "graduated"
-    })
+    response = client.put(f"/api/v1/students/{student_id}", json={"status": "graduated"})
 
     assert response.status_code == 200
     data = response.json()
@@ -171,21 +199,27 @@ def test_update_student_status_endpoint(client):
 def test_delete_student_endpoint(client):
     """Test DELETE /api/v1/students/{student_id}"""
     # Create a school
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
     # Create a student
-    create_response = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john@student.com",
-        "enrollment_date": "2024-01-15"
-    })
+    create_response = client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@student.com",
+            "enrollment_date": "2024-01-15",
+        },
+    )
     student_id = create_response.json()["id"]
 
     # Delete the student
@@ -201,28 +235,37 @@ def test_delete_student_endpoint(client):
 def test_list_excludes_deleted_students(client):
     """Test that GET /api/v1/students/ excludes soft-deleted students"""
     # Create a school
-    school_response = client.post("/api/v1/schools/", json={
-        "name": "Test School",
-        "contact_email": "test@school.com",
-        "contact_phone": "+1234567890"
-    })
+    school_response = client.post(
+        "/api/v1/schools/",
+        json={
+            "name": "Test School",
+            "contact_email": "test@school.com",
+            "contact_phone": "+1234567890",
+        },
+    )
     school_id = school_response.json()["id"]
 
     # Create two students
-    create1 = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john@student.com",
-        "enrollment_date": "2024-01-15"
-    })
-    create2 = client.post("/api/v1/students/", json={
-        "school_id": school_id,
-        "first_name": "Jane",
-        "last_name": "Smith",
-        "email": "jane@student.com",
-        "enrollment_date": "2024-02-01"
-    })
+    client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@student.com",
+            "enrollment_date": "2024-01-15",
+        },
+    )
+    create2 = client.post(
+        "/api/v1/students/",
+        json={
+            "school_id": school_id,
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "email": "jane@student.com",
+            "enrollment_date": "2024-02-01",
+        },
+    )
     student2_id = create2.json()["id"]
 
     # Delete the second student
@@ -239,20 +282,21 @@ def test_list_excludes_deleted_students(client):
 
 def test_create_student_missing_fields(client):
     """Test POST /api/v1/students/ with missing required fields"""
-    response = client.post("/api/v1/students/", json={
-        "first_name": "John",
-        "last_name": "Doe"
-        # Missing school_id, email, enrollment_date
-    })
+    response = client.post(
+        "/api/v1/students/",
+        json={
+            "first_name": "John",
+            "last_name": "Doe",
+            # Missing school_id, email, enrollment_date
+        },
+    )
 
     assert response.status_code == 422  # Validation error
 
 
 def test_update_nonexistent_student(client):
     """Test PUT /api/v1/students/{student_id} with invalid ID"""
-    response = client.put("/api/v1/students/999", json={
-        "first_name": "Updated Name"
-    })
+    response = client.put("/api/v1/students/999", json={"first_name": "Updated Name"})
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Student not found"
@@ -264,4 +308,3 @@ def test_delete_nonexistent_student(client):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Student not found"
-

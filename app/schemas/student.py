@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Optional
+
+from pydantic import BaseModel, EmailStr
+
 from app.models.student import StudentStatus
 
 

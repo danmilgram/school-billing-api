@@ -1,12 +1,14 @@
-import pytest
 from datetime import date
 from decimal import Decimal
-from app.services.school_statement_service import SchoolStatementService
-from app.services.invoice_service import InvoiceService
+
 from app.schemas.invoice import InvoiceItemCreate
+from app.services.invoice_service import InvoiceService
+from app.services.school_statement_service import SchoolStatementService
 
 
-def test_school_statement_basic(db, test_school, test_student, invoice_factory, payment_factory):
+def test_school_statement_basic(
+    db, test_school, test_student, invoice_factory, payment_factory
+):
     """Test basic school account statement"""
     # Create an invoice with payment
     invoice = invoice_factory(test_student.id)
@@ -17,7 +19,7 @@ def test_school_statement_basic(db, test_school, test_student, invoice_factory, 
         db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
-        include_invoices=True
+        include_invoices=True,
     )
     statement = service.get_statement()
 
@@ -36,21 +38,24 @@ def test_school_statement_basic(db, test_school, test_student, invoice_factory, 
     assert statement["invoices"][0]["pending_amount"] == Decimal("600.00")
 
 
-def test_school_statement_multiple_students(db, test_school, test_student, student_factory, invoice_factory, payment_factory):
+def test_school_statement_multiple_students(
+    db, test_school, test_student, student_factory, invoice_factory, payment_factory
+):
     """Test school statement aggregates across multiple students"""
     # Create another student
     student2 = student_factory(
-        test_school.id,
-        first_name="Jane",
-        last_name="Smith",
-        email="jane@student.com"
+        test_school.id, first_name="Jane", last_name="Smith", email="jane@student.com"
     )
 
     # Create invoices for both students
     invoice1 = invoice_factory(test_student.id)
     invoice2 = invoice_factory(
         student2.id,
-        items=[InvoiceItemCreate(description="Tuition", quantity=1, unit_price=Decimal("1200.00"))]
+        items=[
+            InvoiceItemCreate(
+                description="Tuition", quantity=1, unit_price=Decimal("1200.00")
+            )
+        ],
     )
 
     # Make payments
@@ -62,7 +67,7 @@ def test_school_statement_multiple_students(db, test_school, test_student, stude
         db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
-        include_invoices=True
+        include_invoices=True,
     )
     statement = service.get_statement()
 
@@ -72,18 +77,28 @@ def test_school_statement_multiple_students(db, test_school, test_student, stude
     assert statement["summary"]["total_pending"] == Decimal("500.00")
 
 
-def test_school_statement_excludes_cancelled_invoices(db, test_school, test_student, invoice_factory):
+def test_school_statement_excludes_cancelled_invoices(
+    db, test_school, test_student, invoice_factory
+):
     """Test that cancelled invoices are excluded from school statement"""
     # Create two invoices
     invoice1 = invoice_factory(
         test_student.id,
-        items=[InvoiceItemCreate(description="Invoice 1", quantity=1, unit_price=Decimal("5000.00"))]
+        items=[
+            InvoiceItemCreate(
+                description="Invoice 1", quantity=1, unit_price=Decimal("5000.00")
+            )
+        ],
     )
-    invoice2 = invoice_factory(
+    invoice_factory(
         test_student.id,
         issue_date=date(2024, 2, 1),
         due_date=date(2024, 3, 1),
-        items=[InvoiceItemCreate(description="Invoice 2", quantity=1, unit_price=Decimal("1000.00"))]
+        items=[
+            InvoiceItemCreate(
+                description="Invoice 2", quantity=1, unit_price=Decimal("1000.00")
+            )
+        ],
     )
 
     # Cancel the first invoice
@@ -94,7 +109,7 @@ def test_school_statement_excludes_cancelled_invoices(db, test_school, test_stud
         db=db,
         start_date=date(2024, 1, 1),
         end_date=date(2024, 12, 31),
-        include_invoices=True
+        include_invoices=True,
     )
     statement = service.get_statement()
 
@@ -106,10 +121,7 @@ def test_school_statement_excludes_cancelled_invoices(db, test_school, test_stud
 def test_school_statement_nonexistent_school(db):
     """Test school statement for non-existent school"""
     service = SchoolStatementService(
-        school_id=999,
-        db=db,
-        start_date=date(2024, 1, 1),
-        end_date=date(2024, 12, 31)
+        school_id=999, db=db, start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
     )
     statement = service.get_statement()
 

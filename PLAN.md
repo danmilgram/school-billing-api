@@ -1,10 +1,5 @@
 # School Billing API – Execution Plan
 
-# Double check
-- Core bussiness rules
-- Validations
-- Tests
-
   ## Code Quality
 - [ ] Add `ruff`
 - [ ] Configure linting rules
@@ -32,3 +27,7 @@
   - Test execution and coverage
   - Development workflow
 
+# Double check
+- Core bussiness rules
+- Validations
+- Manual tests

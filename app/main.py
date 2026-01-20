@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+
 from app.core.config import settings
-from app.routes import schools, students, invoices, auth
+from app.routes import auth, invoices, schools, students
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

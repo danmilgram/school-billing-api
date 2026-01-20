@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_register_user_endpoint(client):
     """Test POST /api/v1/auth/register"""
     response = client.post(
@@ -8,8 +5,8 @@ def test_register_user_endpoint(client):
         json={
             "email": "newuser@example.com",
             "password": "password123",
-            "full_name": "New User"
-        }
+            "full_name": "New User",
+        },
     )
 
     assert response.status_code == 201
@@ -31,8 +28,8 @@ def test_register_duplicate_email(client):
         json={
             "email": "duplicate@example.com",
             "password": "password123",
-            "full_name": "First User"
-        }
+            "full_name": "First User",
+        },
     )
 
     # Try to register with same email
@@ -41,8 +38,8 @@ def test_register_duplicate_email(client):
         json={
             "email": "duplicate@example.com",
             "password": "password456",
-            "full_name": "Second User"
-        }
+            "full_name": "Second User",
+        },
     )
 
     assert response.status_code == 400
@@ -56,8 +53,8 @@ def test_register_invalid_email(client):
         json={
             "email": "not-an-email",
             "password": "password123",
-            "full_name": "Test User"
-        }
+            "full_name": "Test User",
+        },
     )
 
     assert response.status_code == 422  # Validation error
@@ -67,10 +64,7 @@ def test_login_success(client, test_user):
     """Test POST /api/v1/auth/login with valid credentials"""
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user.email,
-            "password": "testpassword123"
-        }
+        data={"username": test_user.email, "password": "testpassword123"},
     )
 
     assert response.status_code == 200
@@ -84,10 +78,7 @@ def test_login_wrong_password(client, test_user):
     """Test login with wrong password"""
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user.email,
-            "password": "wrongpassword"
-        }
+        data={"username": test_user.email, "password": "wrongpassword"},
     )
 
     assert response.status_code == 401
@@ -98,10 +89,7 @@ def test_login_nonexistent_user(client):
     """Test login with non-existent email"""
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": "nonexistent@example.com",
-            "password": "password123"
-        }
+        data={"username": "nonexistent@example.com", "password": "password123"},
     )
 
     assert response.status_code == 401
@@ -111,8 +99,7 @@ def test_login_nonexistent_user(client):
 def test_get_current_user_profile(client, test_user, auth_token):
     """Test GET /api/v1/auth/me with valid token"""
     response = client.post(
-        "/api/v1/auth/me",
-        headers={"Authorization": f"Bearer {auth_token}"}
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {auth_token}"}
     )
 
     # Note: Due to our test setup with mock user override, this will return the mock user
@@ -122,8 +109,7 @@ def test_get_current_user_profile(client, test_user, auth_token):
 def test_get_current_user_profile_get_method(client, test_user, auth_token):
     """Test GET /api/v1/auth/me with valid token using GET"""
     response = client.get(
-        "/api/v1/auth/me",
-        headers={"Authorization": f"Bearer {auth_token}"}
+        "/api/v1/auth/me", headers={"Authorization": f"Bearer {auth_token}"}
     )
 
     assert response.status_code == 200
@@ -137,10 +123,10 @@ def test_get_current_user_profile_get_method(client, test_user, auth_token):
 def test_get_current_user_without_token(client):
     """Test GET /api/v1/auth/me without authentication token"""
     # Need to clear the auth override for this test
-    from app.main import app
-    from app.core.auth import get_current_user
-    from app.core.database import get_db
     from fastapi.testclient import TestClient
+
+    from app.core.database import get_db
+    from app.main import app
 
     # Temporarily clear overrides
     app.dependency_overrides.clear()
@@ -148,6 +134,7 @@ def test_get_current_user_without_token(client):
     # Add back only the db override
     def override_get_db():
         from tests.conftest import TestingSessionLocal
+
         db = TestingSessionLocal()
         try:
             yield db
@@ -166,9 +153,10 @@ def test_get_current_user_without_token(client):
 def test_get_current_user_with_invalid_token(client):
     """Test GET /api/v1/auth/me with invalid token"""
     # Need to clear the auth override for this test
-    from app.main import app
-    from app.core.database import get_db
     from fastapi.testclient import TestClient
+
+    from app.core.database import get_db
+    from app.main import app
 
     # Temporarily clear overrides
     app.dependency_overrides.clear()
@@ -176,6 +164,7 @@ def test_get_current_user_with_invalid_token(client):
     # Add back only the db override
     def override_get_db():
         from tests.conftest import TestingSessionLocal
+
         db = TestingSessionLocal()
         try:
             yield db
@@ -186,8 +175,7 @@ def test_get_current_user_with_invalid_token(client):
 
     with TestClient(app) as temp_client:
         response = temp_client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": "Bearer invalid_token_here"}
+            "/api/v1/auth/me", headers={"Authorization": "Bearer invalid_token_here"}
         )
 
         assert response.status_code == 401
@@ -197,10 +185,7 @@ def test_register_without_optional_full_name(client):
     """Test registering without full_name (optional field)"""
     response = client.post(
         "/api/v1/auth/register",
-        json={
-            "email": "noname@example.com",
-            "password": "password123"
-        }
+        json={"email": "noname@example.com", "password": "password123"},
     )
 
     assert response.status_code == 201
@@ -217,10 +202,7 @@ def test_login_inactive_user(client, test_user, db):
 
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user.email,
-            "password": "testpassword123"
-        }
+        data={"username": test_user.email, "password": "testpassword123"},
     )
 
     # Login should succeed but accessing protected routes should fail
@@ -232,10 +214,7 @@ def test_jwt_token_contains_user_email(client, test_user):
     """Test that JWT token contains user email in subject"""
     response = client.post(
         "/api/v1/auth/login",
-        data={
-            "username": test_user.email,
-            "password": "testpassword123"
-        }
+        data={"username": test_user.email, "password": "testpassword123"},
     )
 
     assert response.status_code == 200
@@ -244,15 +223,16 @@ def test_jwt_token_contains_user_email(client, test_user):
     # Decode token header to verify it's a JWT
     import base64
     import json
+
     # JWT format: header.payload.signature
-    parts = token.split('.')
+    parts = token.split(".")
     assert len(parts) == 3, "Token should have 3 parts"
 
     # Decode payload (add padding if needed)
     payload = parts[1]
     padding = 4 - len(payload) % 4
     if padding != 4:
-        payload += '=' * padding
+        payload += "=" * padding
 
     decoded = json.loads(base64.b64decode(payload))
     assert decoded["sub"] == test_user.email

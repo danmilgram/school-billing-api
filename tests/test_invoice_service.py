@@ -1,9 +1,9 @@
-import pytest
 from datetime import date
 from decimal import Decimal
+
+from app.models.invoice import InvoiceStatus
+from app.schemas.invoice import InvoiceCreate, InvoiceItemCreate, InvoiceUpdate
 from app.services.invoice_service import InvoiceService
-from app.schemas.invoice import InvoiceCreate, InvoiceUpdate, InvoiceItemCreate
-from app.models.invoice import Invoice, InvoiceStatus
 
 
 def test_create_invoice_with_items(db, test_student):
@@ -14,9 +14,13 @@ def test_create_invoice_with_items(db, test_student):
         issue_date=date(2024, 1, 20),
         due_date=date(2024, 2, 20),
         items=[
-            InvoiceItemCreate(description="Tuition", quantity=1, unit_price=Decimal("10000.00")),
-            InvoiceItemCreate(description="Books", quantity=3, unit_price=Decimal("500.00"))
-        ]
+            InvoiceItemCreate(
+                description="Tuition", quantity=1, unit_price=Decimal("10000.00")
+            ),
+            InvoiceItemCreate(
+                description="Books", quantity=3, unit_price=Decimal("500.00")
+            ),
+        ],
     )
 
     invoice = InvoiceService.create(invoice_data, db)
@@ -36,10 +40,16 @@ def test_invoice_total_calculated_from_items(db, test_student):
         issue_date=date(2024, 1, 20),
         due_date=date(2024, 2, 20),
         items=[
-            InvoiceItemCreate(description="Item 1", quantity=2, unit_price=Decimal("100.00")),
-            InvoiceItemCreate(description="Item 2", quantity=3, unit_price=Decimal("50.00")),
-            InvoiceItemCreate(description="Item 3", quantity=1, unit_price=Decimal("250.00"))
-        ]
+            InvoiceItemCreate(
+                description="Item 1", quantity=2, unit_price=Decimal("100.00")
+            ),
+            InvoiceItemCreate(
+                description="Item 2", quantity=3, unit_price=Decimal("50.00")
+            ),
+            InvoiceItemCreate(
+                description="Item 3", quantity=1, unit_price=Decimal("250.00")
+            ),
+        ],
     )
 
     invoice = InvoiceService.create(invoice_data, db)
@@ -50,12 +60,23 @@ def test_invoice_total_calculated_from_items(db, test_student):
 
 def test_get_all_invoices(db, invoice_factory, test_student):
     """Test getting all invoices"""
-    invoice_factory(test_student.id, items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("100.00"))])
+    invoice_factory(
+        test_student.id,
+        items=[
+            InvoiceItemCreate(
+                description="Item", quantity=1, unit_price=Decimal("100.00")
+            )
+        ],
+    )
     invoice_factory(
         test_student.id,
         issue_date=date(2024, 2, 1),
         due_date=date(2024, 3, 1),
-        items=[InvoiceItemCreate(description="Item", quantity=1, unit_price=Decimal("200.00"))]
+        items=[
+            InvoiceItemCreate(
+                description="Item", quantity=1, unit_price=Decimal("200.00")
+            )
+        ],
     )
 
     invoices = InvoiceService.get_all(db)
@@ -92,7 +113,9 @@ def test_add_item_recalculates_total(db, test_invoice):
     assert test_invoice.total_amount == Decimal("1000.00")
 
     # Add a new item
-    new_item = InvoiceItemCreate(description="New Item", quantity=2, unit_price=Decimal("50.00"))
+    new_item = InvoiceItemCreate(
+        description="New Item", quantity=2, unit_price=Decimal("50.00")
+    )
     InvoiceService.add_item(test_invoice, new_item, db)
 
     # Refresh invoice and check total
@@ -105,16 +128,22 @@ def test_update_item_recalculates_total(db, invoice_factory, test_student):
     invoice = invoice_factory(
         test_student.id,
         items=[
-            InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
-            InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00"))
-        ]
+            InvoiceItemCreate(
+                description="Item 1", quantity=1, unit_price=Decimal("100.00")
+            ),
+            InvoiceItemCreate(
+                description="Item 2", quantity=1, unit_price=Decimal("50.00")
+            ),
+        ],
     )
 
     assert invoice.total_amount == Decimal("150.00")
 
     # Update the first item
     item_to_update = invoice.items[0]
-    updated_item_data = InvoiceItemCreate(description="Updated Item", quantity=3, unit_price=Decimal("200.00"))
+    updated_item_data = InvoiceItemCreate(
+        description="Updated Item", quantity=3, unit_price=Decimal("200.00")
+    )
     InvoiceService.update_item(item_to_update, updated_item_data, db)
 
     # Refresh invoice and check total
@@ -127,9 +156,13 @@ def test_delete_item_recalculates_total(db, invoice_factory, test_student):
     invoice = invoice_factory(
         test_student.id,
         items=[
-            InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
-            InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00"))
-        ]
+            InvoiceItemCreate(
+                description="Item 1", quantity=1, unit_price=Decimal("100.00")
+            ),
+            InvoiceItemCreate(
+                description="Item 2", quantity=1, unit_price=Decimal("50.00")
+            ),
+        ],
     )
 
     assert invoice.total_amount == Decimal("150.00")
@@ -163,10 +196,16 @@ def test_recalculate_total_excludes_deleted_items(db, invoice_factory, test_stud
     invoice = invoice_factory(
         test_student.id,
         items=[
-            InvoiceItemCreate(description="Item 1", quantity=1, unit_price=Decimal("100.00")),
-            InvoiceItemCreate(description="Item 2", quantity=1, unit_price=Decimal("50.00")),
-            InvoiceItemCreate(description="Item 3", quantity=1, unit_price=Decimal("25.00"))
-        ]
+            InvoiceItemCreate(
+                description="Item 1", quantity=1, unit_price=Decimal("100.00")
+            ),
+            InvoiceItemCreate(
+                description="Item 2", quantity=1, unit_price=Decimal("50.00")
+            ),
+            InvoiceItemCreate(
+                description="Item 3", quantity=1, unit_price=Decimal("25.00")
+            ),
+        ],
     )
 
     assert invoice.total_amount == Decimal("175.00")
