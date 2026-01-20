@@ -1,3 +1,4 @@
+import time
 from datetime import date
 from typing import List
 
@@ -6,6 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.core.auth import get_current_user, require_admin
 from app.core.database import get_db
+from app.core.metrics import (
+    STUDENT_STATEMENT_DURATION_SECONDS,
+    STUDENT_STATEMENT_REQUESTS_TOTAL,
+)
 from app.models.user import User
 from app.schemas.account_statement import StudentAccountStatement
 from app.schemas.student import StudentCreate, StudentRead, StudentUpdate
@@ -111,6 +116,12 @@ def get_student_account_statement(
     - include_invoices (optional, default: false): Include the list of
       invoices in the response
     """
+    # Record metrics
+    STUDENT_STATEMENT_REQUESTS_TOTAL.labels(
+        include_invoices=str(include_invoices).lower()
+    ).inc()
+
+    start_time = time.time()
     service = StudentStatementService(
         student_id=student_id,
         db=db,
@@ -119,6 +130,10 @@ def get_student_account_statement(
         include_invoices=include_invoices,
     )
     statement = service.get_statement()
+    duration = time.time() - start_time
+
+    STUDENT_STATEMENT_DURATION_SECONDS.observe(duration)
+
     if not statement:
         raise HTTPException(status_code=404, detail="Student not found")
     return statement
